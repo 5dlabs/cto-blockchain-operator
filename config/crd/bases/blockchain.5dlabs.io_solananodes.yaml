@@ -1,0 +1,156 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: solananodes.blockchain.5dlabs.io
+spec:
+  group: blockchain.5dlabs.io
+  names:
+    kind: SolanaNode
+    listKind: SolanaNodeList
+    plural: solananodes
+    singular: solananode
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SolanaNode is the Schema for the solananodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SolanaNodeSpec defines the desired state of SolanaNode
+            properties:
+              replicas:
+                description: Number of replicas
+                type: integer
+                default: 1
+              nodeType:
+                description: Type of node (validator, rpc, archival)
+                type: string
+                enum:
+                - validator
+                - rpc
+                - archival
+                default: validator
+              rpcPort:
+                description: RPC port
+                type: integer
+                default: 8899
+              gossipPort:
+                description: Gossip port
+                type: integer
+                default: 8001
+              resources:
+                description: Compute resources
+                properties:
+                  cpuRequest:
+                    description: CPU request
+                    type: string
+                    default: "28"
+                  memoryRequest:
+                    description: Memory request
+                    type: string
+                    default: "64Gi"
+                  cpuLimit:
+                    description: CPU limit (optional)
+                    type: string
+                  memoryLimit:
+                    description: Memory limit (optional)
+                    type: string
+                type: object
+              config:
+                description: Node configuration
+                properties:
+                  expectedGenesisHash:
+                    description: Genesis hash to expect
+                    type: string
+                    default: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+                  limitLedgerSize:
+                    description: Limit ledger size in shreds
+                    type: integer
+                    default: 200000000
+                  fullRpcApi:
+                    description: Enable full RPC API
+                    type: boolean
+                    default: true
+                  enableAccountsDiskIndex:
+                    description: Enable accounts disk index
+                    type: boolean
+                    default: true
+                  skipStartupLedgerVerification:
+                    description: Skip startup ledger verification
+                    type: boolean
+                    default: true
+                  rpcThreads:
+                    description: Number of RPC threads
+                    type: integer
+                    default: 128
+                  maximumFullSnapshotsToRetain:
+                    description: Maximum full snapshots to retain
+                    type: integer
+                    default: 2
+                  walRecoveryMode:
+                    description: WAL recovery mode
+                    type: string
+                    default: "skip_any_corrupted_record"
+                type: object
+              image:
+                description: Container image
+                type: string
+                default: "anzaxyz/agave:v3.1.9"
+              enableVoting:
+                description: Enable voting (validator only)
+                type: boolean
+                default: false
+              identitySecret:
+                description: Identity secret name
+                type: string
+              knownValidators:
+                description: Known validators to trust
+                items:
+                  type: string
+                type: array
+              entrypoints:
+                description: Entrypoints to connect to
+                items:
+                  type: string
+                type: array
+            required:
+            - identitySecret
+            type: object
+          status:
+            description: SolanaNodeStatus defines the observed state of SolanaNode
+            properties:
+              phase:
+                description: Current phase
+                type: string
+                enum:
+                - pending
+                - initializing
+                - running
+                - error
+              slotHeight:
+                description: Current slot height
+                type: integer
+              healthy:
+                description: Whether the node is healthy
+                type: boolean
+              slotsBehind:
+                description: Number of slots behind network
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true

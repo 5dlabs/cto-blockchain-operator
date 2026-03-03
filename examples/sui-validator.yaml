@@ -1,0 +1,22 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: SuiValidator
+metadata:
+  name: mainnet-validator
+  namespace: default
+spec:
+  replicas: 1
+  rpcPort: 9000
+  networkPort: 8080
+  config:
+    chainId: "mainnet"
+    enableCheckpointing: true
+    enablePruning: false
+    dbPath: "/opt/sui/data"
+  resources:
+    cpuRequest: "24"
+    memoryRequest: "128Gi"
+    cpuLimit: "32"
+    memoryLimit: "192Gi"
+  image: "sui-validator:latest"
+  identitySecret: "sui-identity"
+  genesisBlob: "https://github.com/MystenLabs/sui-genesis/raw/main/mainnet/genesis.blob"

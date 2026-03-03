@@ -1,0 +1,29 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: SolanaNode
+metadata:
+  name: mainnet-archival
+  namespace: default
+spec:
+  nodeType: archival
+  enableVoting: false
+  identitySecret: "solana-archival-identity"
+  knownValidators:
+    - "7Np41oeYqPefeNQEHSv1UDhYrehxin3NStELsSKCT4K2"  # Certified Node
+    - "HEL1USMZKAL2odpNBj2oCjffnFGaYwmbGmyewGv1e2TU"  # Helius
+  entrypoints:
+    - "entrypoint.mainnet-beta.solana.com:8001"
+    - "entrypoint2.mainnet-beta.solana.com:8001"
+  config:
+    expectedGenesisHash: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
+    limitLedgerSize: 0  # No limit for archival node
+    fullRpcApi: true
+    enableAccountsDiskIndex: true
+    skipStartupLedgerVerification: false  # Verify ledger for archival
+    rpcThreads: 128
+    maximumFullSnapshotsToRetain: 10  # Keep more snapshots
+    walRecoveryMode: "skip_any_corrupted_record"
+  resources:
+    cpuRequest: "32"
+    memoryRequest: "128Gi"
+    cpuLimit: "48"
+    memoryLimit: "256Gi"

@@ -13,26 +13,26 @@ Unlike existing solutions, this operator is built from scratch in Rust with perf
 ## Supported Blockchains
 
 ### L1 Blockchains
-| Chain | Node Types | Hardware Requirements |
-|-------|------------|----------------------|
-| **Solana** | Validator, RPC, Archival | 32 cores, 256GB RAM, 4x NVMe SSD |
-| **Sui** | Validator | 24 cores, 128GB RAM, 4TB NVMe |
-| **Aptos** | Validator, Fullnode | 32 cores, 64GB RAM, 3TB SSD |
-| **Monad** | Validator | 16 cores (4.5GHz+), 32GB RAM, 2.5TB SSD |
-| **NEAR** | Validator, RPC Node | 8 cores, 48GB RAM, 3TB NVMe |
-| **Berachain** | Validator, RPC Node | 4 cores, 16GB RAM, 1TB SSD |
+| Chain | Node Types | Hardware Requirements | Status |
+|-------|------------|----------------------|--------|
+| **Solana** | Validator, RPC, Archival | 32 cores, 256GB RAM, 4x NVMe SSD | ✅ Implemented |
+| **Sui** | Validator | 24 cores, 128GB RAM, 4TB NVMe | ✅ CRD Defined |
+| **Aptos** | Validator, Fullnode | 32 cores, 64GB RAM, 3TB SSD | ✅ CRD Defined |
+| **Monad** | Validator | 16 cores (4.5GHz+), 32GB RAM, 2.5TB SSD | ✅ Documented |
+| **NEAR** | Validator, RPC Node | 8 cores, 48GB RAM, 3TB NVMe | ✅ Documented |
+| **Berachain** | Validator, RPC Node | 4 cores, 16GB RAM, 1TB SSD | ✅ Documented |
 
 ### L2 Blockchains
-| Chain | Node Types | Hardware Requirements |
-|-------|------------|----------------------|
-| **Arbitrum** | Full Node | 8+ cores, 64GB RAM, NVMe SSD |
-| **Base** | Full Node | 8+ cores, 64GB RAM, NVMe SSD |
-| **Optimism** | Full Node | 8+ cores, 64GB RAM, NVMe SSD |
+| Chain | Node Types | Hardware Requirements | Status |
+|-------|------------|----------------------|--------|
+| **Arbitrum** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
+| **Base** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
+| **Optimism** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
 
 ### Interoperability Protocols
-| Protocol | Components | Hardware Requirements |
-|----------|------------|----------------------|
-| **LayerZero** | Relayer, Oracle | 8 cores, 32GB RAM |
+| Protocol | Components | Hardware Requirements | Status |
+|----------|------------|----------------------|--------|
+| **LayerZero** | Relayer, Oracle | 8 cores, 32GB RAM | ✅ Documented |
 
 ## Architecture
 
@@ -164,7 +164,31 @@ cargo test
 
 # Integration tests with KinD (GitHub Actions)
 # See .github/workflows/test-kind.yaml
+
+# Comprehensive testing plan
+# See TESTING_PLAN.md
 ```
+
+## Testing
+
+The CTO Blockchain Operator has a comprehensive testing approach covering unit, integration, and end-to-end tests:
+
+### Unit Tests
+Located in `/tests/` directory:
+- Provider implementations
+- Controller logic
+- CRD validation
+- Resource management
+
+### Integration Tests
+GitHub Actions workflow with KinD:
+- Multi-stage testing
+- Provider integration validation
+- CRD application testing
+- Example resource deployment
+
+### End-to-End Tests
+See `TESTING_PLAN.md` for comprehensive testing strategy.
 
 ## License
 

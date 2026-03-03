@@ -1,0 +1,25 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: AptosNode
+metadata:
+  name: mainnet-validator
+  namespace: default
+spec:
+  nodeType: validator
+  replicas: 1
+  apiPort: 8080
+  grpcPort: 50051
+  config:
+    chainId: "mainnet"
+    enableIndexer: false
+    enableTelemetry: true
+    pruneTxnState: false
+    dbPath: "/opt/aptos/data"
+  resources:
+    cpuRequest: "32"
+    memoryRequest: "64Gi"
+    cpuLimit: "48"
+    memoryLimit: "128Gi"
+  image: "aptos-node:latest"
+  identitySecret: "aptos-identity"
+  waypoint: "0:0000000000000000000000000000000000000000000000000000000000000000"
+  genesisVersion: 0

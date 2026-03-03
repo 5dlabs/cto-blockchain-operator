@@ -1,0 +1,121 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: suivalidators.blockchain.5dlabs.io
+spec:
+  group: blockchain.5dlabs.io
+  names:
+    kind: SuiValidator
+    listKind: SuiValidatorList
+    plural: suivalidators
+    singular: suivalidator
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: SuiValidator is the Schema for the suivalidators API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SuiValidatorSpec defines the desired state of SuiValidator
+            properties:
+              replicas:
+                description: Number of replicas
+                type: integer
+                default: 1
+              rpcPort:
+                description: RPC port
+                type: integer
+                default: 9000
+              networkPort:
+                description: Network port
+                type: integer
+                default: 8080
+              resources:
+                description: Compute resources
+                properties:
+                  cpuRequest:
+                    description: CPU request
+                    type: string
+                    default: "24"
+                  memoryRequest:
+                    description: Memory request
+                    type: string
+                    default: "128Gi"
+                  cpuLimit:
+                    description: CPU limit (optional)
+                    type: string
+                  memoryLimit:
+                    description: Memory limit (optional)
+                    type: string
+                type: object
+              config:
+                description: Node configuration
+                properties:
+                  chainId:
+                    description: Chain ID
+                    type: string
+                    default: "mainnet"
+                  enableCheckpointing:
+                    description: Enable checkpointing
+                    type: boolean
+                    default: true
+                  enablePruning:
+                    description: Enable pruning
+                    type: boolean
+                    default: false
+                  dbPath:
+                    description: Database path
+                    type: string
+                    default: "/opt/sui/data"
+                type: object
+              image:
+                description: Container image
+                type: string
+                default: "sui-validator:latest"
+              identitySecret:
+                description: Identity secret name
+                type: string
+              genesisBlob:
+                description: Genesis blob URL or ConfigMap reference
+                type: string
+            required:
+            - identitySecret
+            type: object
+          status:
+            description: SuiValidatorStatus defines the observed state of SuiValidator
+            properties:
+              phase:
+                description: Current phase
+                type: string
+                enum:
+                - pending
+                - initializing
+                - running
+                - error
+              epoch:
+                description: Current epoch
+                type: integer
+              healthy:
+                description: Whether the node is healthy
+                type: boolean
+              peers:
+                description: Number of connected peers
+                type: integer
+            type: object
+        type: object
+    served: true
+    storage: true

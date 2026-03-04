@@ -1,11 +1,9 @@
 use super::{MetalProvider, ProviderError, Server, ServerSpec, ServerSpecs, ServerStatus};
 use async_trait::async_trait;
-use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use tracing::*;
 
 pub struct CherryProvider {
-    client: Client,
     api_key: String,
     team_id: String,
     project_id: String,
@@ -29,7 +27,6 @@ struct CherryIp {
 impl CherryProvider {
     pub fn new(api_key: String, team_id: String, project_id: String) -> Self {
         Self {
-            client: Client::new(),
             api_key,
             team_id,
             project_id,

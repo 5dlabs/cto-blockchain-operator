@@ -22,7 +22,7 @@ jobs:
       with:
         registry: ghcr.io
         username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+        password: ${{ github.token }}
 
     - name: Make package public
       run: |
@@ -36,7 +36,7 @@ jobs:
         images: ghcr.io/${{ github.repository }}
         tags: |
           type=sha,prefix=
-          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=latest
 
     - name: Build and push
       uses: docker/build-push-action@v5
@@ -48,8 +48,8 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Check package
+    - name: Check package tags
       run: |
-        echo "Checking package..."
-        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+        echo "Checking package tags in GHCR..."
+        curl -fsSL -u "${{ github.actor }}:${{ github.token }}" \
           "https://ghcr.io/v2/${{ github.repository }}/tags/list" | head -20

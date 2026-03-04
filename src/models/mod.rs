@@ -1,4 +1,29 @@
 use serde::{Deserialize, Serialize};
+use std::fmt;
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    Cherry,
+    Latitude,
+    Ovh,
+}
+
+impl Default for Provider {
+    fn default() -> Self {
+        Provider::Cherry
+    }
+}
+
+impl fmt::Display for Provider {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Provider::Cherry => write!(f, "cherry"),
+            Provider::Latitude => write!(f, "latitude"),
+            Provider::Ovh => write!(f, "ovh"),
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NodeStatus {
@@ -33,6 +58,17 @@ pub enum ServerStatus {
     Inactive,
     Provisioning,
     Error,
+}
+
+impl fmt::Display for ServerStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            ServerStatus::Active => write!(f, "Active"),
+            ServerStatus::Inactive => write!(f, "Inactive"),
+            ServerStatus::Provisioning => write!(f, "Provisioning"),
+            ServerStatus::Error => write!(f, "Error"),
+        }
+    }
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug)]

@@ -2,6 +2,15 @@ use kube::CustomResource;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+/// Provider for bare-metal server
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Provider {
+    Cherry,
+    Latitude,
+    Ovh,
+}
+
 /// SolanaNodeSpec defines the desired state of SolanaNode
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[kube(
@@ -14,6 +23,14 @@ use serde::{Deserialize, Serialize};
     finalizer = "solananodes.blockchain.5dlabs.io"
 )]
 pub struct SolanaNodeSpec {
+    /// Provider for bare-metal server
+    #[serde(default = "default_provider")]
+    pub provider: Provider,
+    
+    /// Region for the bare-metal server (e.g., "lt-siauliai", "nl-ams")
+    #[serde(default = "default_region")]
+    pub region: String,
+    
     /// Number of replicas
     #[serde(default = "default_replicas")]
     pub replicas: i32,
@@ -54,6 +71,8 @@ pub struct SolanaNodeSpec {
     pub entrypoints: Option<Vec<String>>,
 }
 
+fn default_provider() -> Provider { Provider::Cherry }
+fn default_region() -> String { "lt-siauliai".to_string() }
 fn default_replicas() -> i32 { 1 }
 fn default_node_type() -> NodeType { NodeType::Validator }
 fn default_rpc_port() -> i32 { 8899 }

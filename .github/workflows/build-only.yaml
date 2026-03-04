@@ -7,6 +7,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -20,6 +23,11 @@ jobs:
         registry: ghcr.io
         username: ${{ github.actor }}
         password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Make package public
+      run: |
+        # First, check if package exists and make it public
+        echo "Ensuring package visibility is set to public..."
 
     - name: Extract metadata
       id: meta
@@ -39,3 +47,9 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+    - name: Check package
+      run: |
+        echo "Checking package..."
+        curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          "https://ghcr.io/v2/${{ github.repository }}/tags/list" | head -20

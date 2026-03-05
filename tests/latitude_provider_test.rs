@@ -10,7 +10,7 @@ async fn test_latitude_provider_construction() {
 }
 
 #[tokio::test]
-async fn test_latitude_provider_validate_with_spec() {
+async fn test_latitude_provider_validate_performance_spec() {
     let provider = LatitudeProvider::new("test-api-key".to_string());
     
     let spec = ServerSpec {
@@ -26,7 +26,7 @@ async fn test_latitude_provider_validate_with_spec() {
 }
 
 #[tokio::test]
-async fn test_latitude_provider_validate_with_spec() {
+async fn test_latitude_provider_validate_standard_spec() {
     let provider = LatitudeProvider::new("test-api-key".to_string());
     
     let spec = ServerSpec {

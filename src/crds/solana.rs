@@ -72,15 +72,40 @@ pub enum SupportService {
     BigBalls,
 }
 
+/// External cluster scenario
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum ExternalClusterMode {
+    /// Provision worker nodes and join an already-existing cluster
+    AddWorkerToExistingCluster,
+    /// Provision control-plane + workers for a brand new cluster
+    ProvisionNewCluster,
+}
+
+fn default_external_cluster_mode() -> ExternalClusterMode {
+    ExternalClusterMode::AddWorkerToExistingCluster
+}
+
 /// External cluster configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
 pub struct ExternalClusterSpec {
     /// Provider for bare-metal servers
     pub provider: Provider,
+    /// Scenario selector:
+    /// 1) Add worker node(s) to an existing cluster
+    /// 2) Provision a brand-new cluster in target region
+    #[serde(default = "default_external_cluster_mode")]
+    pub mode: ExternalClusterMode,
     /// Preferred regions (in order of priority)
     #[serde(default = "default_regions")]
     pub region_preferences: Vec<String>,
-    /// Whether to bootstrap a new Kubernetes cluster (Talos)
+    /// Existing cluster identifier/name (used when mode=AddWorkerToExistingCluster)
+    #[serde(default)]
+    pub existing_cluster_name: Option<String>,
+    /// Existing cluster API endpoint (optional)
+    #[serde(default)]
+    pub existing_cluster_endpoint: Option<String>,
+    /// Whether to bootstrap Kubernetes automatically (used when mode=ProvisionNewCluster)
     #[serde(default)]
     pub create_k8s_cluster: bool,
     /// SSH keys for server access

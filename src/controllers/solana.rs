@@ -257,7 +257,10 @@ async fn provision_node_pools(
 ) -> Result<usize, ControllerError> {
     let name = solana_node.name_any();
 
+    debug!(name = %name, node_pools_len = solana_node.spec.node_pools.len(), "Checking node pools");
+
     let pools = if solana_node.spec.node_pools.is_empty() {
+        debug!(name = %name, "Using default node pools");
         vec![
             (
                 NodePoolRole::SolanaRpc,
@@ -273,8 +276,10 @@ async fn provision_node_pools(
             ),
         ]
     } else {
+        debug!(name = %name, "Using custom node pools");
         let mut result: Vec<(NodePoolRole, i32, String, String)> = Vec::with_capacity(solana_node.spec.node_pools.len());
         for p in &solana_node.spec.node_pools {
+            debug!(name = %name, role = ?p.role, replicas = p.replicas, "Processing node pool");
             if p.replicas <= 0 {
                 return Err(ControllerError::InvalidConfig(format!(
                     "node pool {:?} has invalid replicas: {} (must be >= 1)",

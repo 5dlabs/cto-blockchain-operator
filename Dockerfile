@@ -1,24 +1,24 @@
-# Simple placeholder Dockerfile for CTO Blockchain Operator
-# This will allow us to deploy and test the operator framework
-# The actual Rust implementation can be added once the build is fixed
+# Production Dockerfile for CTO Blockchain Operator
+FROM rust:1.86-bookworm AS builder
+
+WORKDIR /app
+
+# Build deps cache
+COPY Cargo.toml Cargo.lock ./
+COPY src ./src
+
+RUN cargo build --release
 
 FROM debian:bookworm-slim
 
-# Install required packages
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get install -y --no-install-recommends \
     ca-certificates \
-    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user
-RUN useradd -m -u 1000 cto
+RUN useradd -m -u 10001 cto
 
-# Create a simple placeholder binary
-RUN echo '#!/bin/bash\nwhile true; do sleep 3600; done' > /usr/local/bin/cto-blockchain-operator && \
-    chmod +x /usr/local/bin/cto-blockchain-operator
+COPY --from=builder /app/target/release/cto-blockchain-operator /usr/local/bin/cto-blockchain-operator
 
-# Expose metrics port
-EXPOSE 8080
+USER 10001
 
-# Run the application
 ENTRYPOINT ["/usr/local/bin/cto-blockchain-operator"]

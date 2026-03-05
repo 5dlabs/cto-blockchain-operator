@@ -262,13 +262,13 @@ async fn provision_node_pools(
             (
                 NodePoolRole::SolanaRpc,
                 1,
-                "2x-e5-2680v4".to_string()
+                "2x-e5-2680v4".to_string(),
                 "ubuntu_22_04".to_string(),
             ),
             (
                 NodePoolRole::SupportServices,
                 1,
-                "e5-1660v3".to_string()
+                "e5-1660v3".to_string(),
                 "ubuntu_22_04".to_string(),
             ),
         ]

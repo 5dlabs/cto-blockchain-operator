@@ -262,13 +262,13 @@ async fn provision_node_pools(
             (
                 NodePoolRole::SolanaRpc,
                 1,
-                "/plans/2x-e5-2680v4".to_string(),
+                "2x-e5-2680v4".to_string()
                 "ubuntu_22_04".to_string(),
             ),
             (
                 NodePoolRole::SupportServices,
                 1,
-                "/plans/e5-1660v3".to_string(),
+                "e5-1660v3".to_string()
                 "ubuntu_22_04".to_string(),
             ),
         ]
@@ -282,8 +282,8 @@ async fn provision_node_pools(
                 )));
             }
             let plan = match p.role {
-                NodePoolRole::SolanaRpc => "/plans/2x-e5-2680v4".to_string(),
-                NodePoolRole::SupportServices => "/plans/e5-1660v3".to_string(),
+                NodePoolRole::SolanaRpc => "2x-e5-2680v4".to_string(),
+                NodePoolRole::SupportServices => "e5-1660v3".to_string(),
             };
             let image = p
                 .config

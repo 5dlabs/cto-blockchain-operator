@@ -221,6 +221,19 @@ impl CherryProvider {
         }
     }
 
+    fn normalize_plan(plan: &str) -> String {
+        plan.trim().trim_start_matches("/plans/").to_string()
+    }
+
+    fn normalize_region(region: &str) -> String {
+        let trimmed = region.trim();
+        match trimmed.to_ascii_lowercase().as_str() {
+            "nl-ams" => "NL-Amsterdam".to_string(),
+            "lt-siauliai" => "LT-Siauliai".to_string(),
+            _ => trimmed.to_string(),
+        }
+    }
+
     fn map_server(
         &self,
         source: CherryServerResponse,
@@ -265,10 +278,20 @@ impl MetalProvider for CherryProvider {
             .iter()
             .filter_map(|key| key.parse::<i64>().ok())
             .collect::<Vec<_>>();
+        let normalized_plan = Self::normalize_plan(&spec.plan);
+        let normalized_region = Self::normalize_region(&spec.region);
+
+        info!(
+            server = %spec.name,
+            plan = %normalized_plan,
+            region = %normalized_region,
+            "Cherry create payload normalized"
+        );
+
         let payload = CherryDeployServerRequest {
-            plan: spec.plan.clone(),
+            plan: normalized_plan,
             image: spec.image.clone(),
-            region: spec.region.clone(),
+            region: normalized_region,
             hostname: spec.name.clone(),
             ssh_keys,
         };

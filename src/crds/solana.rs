@@ -33,6 +33,7 @@ pub enum NodePoolRole {
 
 /// Node pool specification
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NodePoolSpec {
     /// Role of this node pool
     pub role: NodePoolRole,
@@ -50,6 +51,7 @@ fn default_pool_replicas() -> i32 { 1 }
 
 /// Node pool configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NodePoolConfig {
     /// For SolanaRpc: node type (validator/rpc/archival)
     #[serde(default)]
@@ -88,6 +90,7 @@ fn default_external_cluster_mode() -> ExternalClusterMode {
 
 /// External cluster configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ExternalClusterSpec {
     /// Provider for bare-metal servers
     pub provider: Provider,
@@ -119,6 +122,7 @@ fn default_regions() -> Vec<String> {
 
 /// SolanaNodeSpec defines the desired state of SolanaNode
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 #[kube(
     group = "blockchain.5dlabs.io",
     version = "v1alpha1",
@@ -179,6 +183,7 @@ pub struct SolanaNodeSpec {
     pub enable_voting: bool,
     
     /// Identity secret name
+    #[serde(alias = "identity_secret")]
     pub identity_secret: String,
     
     /// Known validators to trust
@@ -209,6 +214,7 @@ pub enum NodeType {
 
 /// Node resource requirements
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeResources {
     /// CPU request
     #[serde(default = "default_cpu_request")]
@@ -230,6 +236,7 @@ fn default_memory_request() -> String { "64Gi".to_string() }
 
 /// Node configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeConfig {
     /// Genesis hash to expect
     #[serde(default = "default_genesis_hash")]

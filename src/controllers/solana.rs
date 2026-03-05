@@ -50,7 +50,11 @@ impl SolanaController {
         let name = crd.name_any();
         let namespace = crd.namespace().unwrap_or_else(|| "default".to_string());
 
-        info!("Reconciling SolanaNode {} in namespace {}", name, namespace);
+        let mode_label = match crd.spec.deployment_mode {
+            DeploymentMode::InCluster => "in-cluster",
+            DeploymentMode::External => "external",
+        };
+        info!(name = %name, ns = %namespace, mode = mode_label, "Reconcile begin");
 
         match crd.spec.deployment_mode {
             DeploymentMode::InCluster => {
@@ -63,11 +67,19 @@ impl SolanaController {
                 let statefulset = statefulsets.get_opt(&name).await?;
                 let service = services.get_opt(&name).await?;
 
-                Ok(observe_status(
+                let status = observe_status(
                     statefulset.as_ref(),
                     service.as_ref(),
                     crd.spec.replicas,
-                ))
+                );
+                info!(
+                    name = %name,
+                    ns = %namespace,
+                    phase = ?status.phase,
+                    healthy = status.healthy.unwrap_or(false),
+                    "Reconcile complete (in-cluster)"
+                );
+                Ok(status)
             }
             DeploymentMode::External => {
                 let ext = crd.spec.external_cluster.clone();
@@ -76,6 +88,12 @@ impl SolanaController {
                     .as_ref()
                     .map(|e| e.mode.clone())
                     .unwrap_or(ExternalClusterMode::AddWorkerToExistingCluster);
+
+                let ext_mode_label = match mode {
+                    ExternalClusterMode::AddWorkerToExistingCluster => "add-worker",
+                    ExternalClusterMode::ProvisionNewCluster => "provision-new-cluster",
+                };
+                info!(name = %name, ext_mode = ext_mode_label, "External mode selected");
 
                 // Validate configuration before any provisioning side-effects.
                 validate_external_cluster_config(&ext, &mode)?;
@@ -178,6 +196,12 @@ pub fn validate_external_cluster_config(
 }
 
 fn build_provider(kind: &CrdProvider) -> Result<Arc<dyn MetalProvider>, ControllerError> {
+    let provider_label = match kind {
+        CrdProvider::Cherry => "cherry",
+        CrdProvider::Latitude => "latitude",
+        CrdProvider::Ovh => "ovh",
+    };
+    info!(provider = provider_label, "Building metal provider");
     match kind {
         CrdProvider::Cherry => {
             let api_key = std::env::var("CHERRY_API_KEY").map_err(|_| {
@@ -289,10 +313,18 @@ async fn provision_node_pools(
                 ssh_keys: ssh_keys.to_vec(),
             };
 
+            info!(
+                server = %spec.name,
+                role = role_name,
+                plan = %spec.plan,
+                region = %spec.region,
+                "Provisioning server"
+            );
             provider
                 .create_server(&spec)
                 .await
                 .map_err(|e| ControllerError::ProvisionError(e.to_string()))?;
+            info!(server = %spec.name, "Server provisioned");
             created += 1;
         }
     }
@@ -308,12 +340,14 @@ async fn create_statefulset(client: &Client, solana_node: &SolanaNode) -> Result
     let statefulset = build_statefulset(solana_node);
     let api: Api<StatefulSet> = Api::namespaced(client.clone(), &namespace);
 
+    debug!(name = %name, ns = %namespace, "Applying StatefulSet");
     api.patch(
         &name,
         &PatchParams::apply("cto-blockchain-operator").force(),
         &Patch::Apply(statefulset),
     )
     .await?;
+    info!(name = %name, ns = %namespace, "StatefulSet applied");
 
     Ok(())
 }
@@ -326,12 +360,14 @@ async fn create_service(client: &Client, solana_node: &SolanaNode) -> Result<(),
     let service = build_service(solana_node);
     let api: Api<Service> = Api::namespaced(client.clone(), &namespace);
 
+    debug!(name = %name, ns = %namespace, "Applying Service");
     api.patch(
         &name,
         &PatchParams::apply("cto-blockchain-operator").force(),
         &Patch::Apply(service),
     )
     .await?;
+    info!(name = %name, ns = %namespace, "Service applied");
 
     Ok(())
 }

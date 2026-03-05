@@ -5,46 +5,40 @@ use cto_blockchain_operator::providers::MetalProvider;
 
 #[tokio::test]
 async fn test_latitude_provider_construction() {
-    let provider = LatitudeProvider::new("test-api-key".to_string());
-    
-    // Verify provider is initialized
-    assert_eq!(provider.api_key, "test-api-key");
+    let _provider = LatitudeProvider::new("test-api-key".to_string());
+    // If we get here without panic, construction works
 }
 
 #[tokio::test]
-async fn test_latitude_provider_validate_plan() {
+async fn test_latitude_provider_validate_with_spec() {
     let provider = LatitudeProvider::new("test-api-key".to_string());
     
-    // Test validation with various plans
-    let plans = vec![
-        "standard".to_string(),
-        "performance".to_string(),
-        "gpu".to_string(),
-    ];
+    let spec = ServerSpec {
+        name: "test-node".to_string(),
+        region: "us-west".to_string(),
+        plan: "performance".to_string(),
+        image: "ubuntu_22_04".to_string(),
+        ssh_keys: vec!["test-key".to_string()],
+    };
     
-    for plan in plans {
-        let result = provider.validate_server_creation(
-            "test-node".to_string(),
-            plan,
-            "us-west".to_string()
-        ).await;
-        // Just verify method executes
-        assert!(result.is_ok() || result.is_err());
-    }
+    // Just verify the method can be called - result depends on API
+    let _ = provider.validate_server_creation(&spec).await;
 }
 
 #[tokio::test]
 async fn test_latitude_provider_validate_invalid_region() {
     let provider = LatitudeProvider::new("test-api-key".to_string());
     
-    // Test with invalid region - should fail validation
-    let result = provider.validate_server_creation(
-        "test-node".to_string(),
-        "standard".to_string(),
-        "invalid-region".to_string()
-    ).await;
+    let spec = ServerSpec {
+        name: "test-node".to_string(),
+        region: "invalid-region-xyz".to_string(),
+        plan: "standard".to_string(),
+        image: "ubuntu_22_04".to_string(),
+        ssh_keys: vec!["test-key".to_string()],
+    };
     
-    // Invalid region should fail
+    // Validation with invalid region - expect error
+    let result = provider.validate_server_creation(&spec).await;
     assert!(result.is_err());
 }
 

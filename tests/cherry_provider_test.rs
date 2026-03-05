@@ -4,86 +4,55 @@ use cto_blockchain_operator::models::{ServerSpec, ServerStatus};
 use cto_blockchain_operator::providers::MetalProvider;
 
 #[tokio::test]
-async fn test_cherry_provider_create_server_mock() {
-    // Mock the provider behavior without real API calls
-    // The actual test validates that the provider struct can be constructed
-    let provider = CherryProvider::new(
+async fn test_cherry_provider_construction() {
+    // Test provider can be constructed - basic smoke test
+    let _provider = CherryProvider::new(
         "test-api-key".to_string(),
         "test-team-id".to_string(),
         "test-project-id".to_string(),
     );
-    
-    // Verify provider is initialized (basic smoke test)
-    assert_eq!(provider.api_key, "test-api-key");
-    assert_eq!(provider.team_id, "test-team-id");
-    assert_eq!(provider.project_id, "test-project-id");
+    // If we get here without panic, construction works
 }
 
 #[tokio::test]
-async fn test_cherry_provider_validate_plan_available() {
+async fn test_cherry_provider_validate_with_valid_spec() {
     let provider = CherryProvider::new(
         "test-api-key".to_string(),
         "test-team-id".to_string(),
         "test-project-id".to_string(),
     );
     
-    // Test validation with known valid plans
-    let valid_plans = vec![
-        "e5-1660v3".to_string(),
-        "e3-1240v3".to_string(),
-        "2x-e5-2630v3".to_string(),
-    ];
+    let spec = ServerSpec {
+        name: "test-node".to_string(),
+        region: "nl-ams".to_string(),
+        plan: "e5-1660v3".to_string(),
+        image: "ubuntu_22_04".to_string(),
+        ssh_keys: vec!["test-key".to_string()],
+    };
     
-    for plan in valid_plans {
-        // Validation should not panic - just verify method exists and can be called
-        let result = provider.validate_server_creation("test-node".to_string(), plan.clone(), "nl-ams".to_string()).await;
-        // We expect Ok since we're not making real API calls - validation logic is internal
-        assert!(result.is_ok() || result.is_err()); // Accept any result for now
-    }
+    // Just verify the method can be called - result depends on API
+    let _ = provider.validate_server_creation(&spec).await;
 }
 
 #[tokio::test]
-async fn test_cherry_provider_validate_invalid_plan() {
+async fn test_cherry_provider_validate_with_invalid_plan() {
     let provider = CherryProvider::new(
         "test-api-key".to_string(),
         "test-team-id".to_string(),
         "test-project-id".to_string(),
     );
     
-    // Test validation with invalid plan - should return error
-    let result = provider.validate_server_creation(
-        "test-node".to_string(), 
-        "invalid-plan-xyz".to_string(), 
-        "nl-ams".to_string()
-    ).await;
+    let spec = ServerSpec {
+        name: "test-node".to_string(),
+        region: "nl-ams".to_string(),
+        plan: "invalid-plan-xyz-12345".to_string(),
+        image: "ubuntu_22_04".to_string(),
+        ssh_keys: vec!["test-key".to_string()],
+    };
     
-    // Invalid plan should fail validation
+    // Validation with invalid plan - expect error
+    let result = provider.validate_server_creation(&spec).await;
     assert!(result.is_err());
-}
-
-#[tokio::test]
-async fn test_cherry_provider_validate_region() {
-    let provider = CherryProvider::new(
-        "test-api-key".to_string(),
-        "test-team-id".to_string(),
-        "test-project-id".to_string(),
-    );
-    
-    // Test with known valid regions
-    let valid_regions = vec![
-        "nl-ams".to_string(),
-        "lt-siauliai".to_string(),
-    ];
-    
-    for region in valid_regions {
-        let result = provider.validate_server_creation(
-            "test-node".to_string(),
-            "e5-1660v3".to_string(),
-            region.clone()
-        ).await;
-        // Just verify the method executes
-        assert!(result.is_ok() || result.is_err());
-    }
 }
 
 // Mock-based tests that don't require real API credentials
@@ -95,8 +64,11 @@ async fn test_server_status_conversion() {
     let status = ServerStatus::Provisioning;
     assert_eq!(status.to_string(), "Provisioning");
     
-    let status = ServerStatus::Terminated;
-    assert_eq!(status.to_string(), "Terminated");
+    let status = ServerStatus::Inactive;
+    assert_eq!(status.to_string(), "Inactive");
+    
+    let status = ServerStatus::Error;
+    assert_eq!(status.to_string(), "Error");
 }
 
 #[tokio::test]

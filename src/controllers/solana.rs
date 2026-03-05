@@ -325,11 +325,23 @@ async fn provision_node_pools(
                 region = %spec.region,
                 "Provisioning server"
             );
-            provider
-                .create_server(&spec)
-                .await
-                .map_err(|e| ControllerError::ProvisionError(e.to_string()))?;
-            info!(server = %spec.name, "Server provisioned");
+            
+            // Check if we're in validation-only mode (cost-conscious testing)
+            let dry_run = std::env::var("CTO_DRY_RUN").unwrap_or_default() == "true";
+            if dry_run {
+                info!(server = %spec.name, "DRY RUN: Validating server configuration only");
+                provider
+                    .validate_server_creation(&spec)
+                    .await
+                    .map_err(|e| ControllerError::ProvisionError(format!("Validation failed: {}", e)))?;
+                info!(server = %spec.name, "DRY RUN: Server configuration validated successfully");
+            } else {
+                provider
+                    .create_server(&spec)
+                    .await
+                    .map_err(|e| ControllerError::ProvisionError(e.to_string()))?;
+                info!(server = %spec.name, "Server provisioned");
+            }
             created += 1;
         }
     }

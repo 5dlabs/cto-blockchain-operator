@@ -172,6 +172,33 @@ impl MetalProvider for OvhProvider {
         })
     }
 
+    /// Validate if server creation would succeed without actually creating it.
+    /// Performs basic configuration validation.
+    async fn validate_server_creation(&self, spec: &ServerSpec) -> Result<(), ProviderError> {
+        info!("Validating server configuration for OVH: {}", spec.name);
+
+        // Basic validations
+        if spec.name.is_empty() {
+            return Err(ProviderError::InvalidConfig("Server name is required".to_string()));
+        }
+        
+        if spec.plan.is_empty() {
+            return Err(ProviderError::InvalidConfig("Plan is required".to_string()));
+        }
+        
+        if spec.image.is_empty() {
+            return Err(ProviderError::InvalidConfig("Image is required".to_string()));
+        }
+        
+        if spec.region.is_empty() {
+            return Err(ProviderError::InvalidConfig("Region is required".to_string()));
+        }
+        
+        // Configuration appears valid
+        info!("OVH server configuration validation passed for {}", spec.name);
+        Ok(())
+    }
+
     async fn delete_server(&self, id: &str) -> Result<(), ProviderError> {
         info!("Deleting server from OVH: {}", id);
 

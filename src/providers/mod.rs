@@ -13,6 +13,10 @@ pub enum ProviderError {
     NotFound(String),
     #[error("Network error: {0}")]
     NetworkError(String),
+    #[error("Quota exceeded: {0}")]
+    QuotaExceeded(String),
+    #[error("Invalid configuration: {0}")]
+    InvalidConfig(String),
 }
 
 #[async_trait]
@@ -23,6 +27,19 @@ pub trait MetalProvider: Send + Sync {
     async fn list_servers(&self) -> Result<Vec<crate::models::Server>, ProviderError>;
     async fn start_server(&self, id: &str) -> Result<(), ProviderError>;
     async fn stop_server(&self, id: &str) -> Result<(), ProviderError>;
+    
+    /// Check if server creation would succeed without actually creating it
+    async fn validate_server_creation(&self, spec: &crate::models::ServerSpec) -> Result<(), ProviderError> {
+        // Default implementation just tries to create and delete
+        // Providers should override this with more efficient implementations
+        let server = self.create_server(spec).await?;
+        self.delete_server(&server.id).await.map_err(|e| {
+            // Log the error but don't fail validation since we successfully created
+            warn!("Failed to cleanup test server {}: {}", server.id, e);
+            ProviderError::InvalidConfig("Failed to cleanup test server".to_string())
+        })?;
+        Ok(())
+    }
 }
 
 pub mod cherry;

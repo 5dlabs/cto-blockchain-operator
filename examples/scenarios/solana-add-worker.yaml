@@ -1,0 +1,34 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: SolanaNode
+metadata:
+  name: solana-worker-nlams
+  namespace: cto
+spec:
+  deployment_mode: External
+  external_cluster:
+    provider: cherry
+    mode: add-worker-to-existing-cluster
+    region_preferences:
+      - nl-ams
+      - lt-siauliai
+    existing_cluster_name: my-solana-cluster
+    existing_cluster_endpoint: https://kubernetes.example.com:6443
+    ssh_keys:
+      - ssh-rsa AAAAB3NzaC1...
+  node_pools:
+    - role: solana-rpc
+      replicas: 1
+      resources:
+        cpu_request: "28"
+        memory_request: 64Gi
+    - role: support-services
+      replicas: 1
+      resources:
+        cpu_request: "8"
+        memory_request: 32Gi
+      config:
+        services:
+          - questdb
+          - postgres
+          - redis
+          - big-balls

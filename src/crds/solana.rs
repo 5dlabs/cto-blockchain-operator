@@ -11,6 +11,87 @@ pub enum Provider {
     Ovh,
 }
 
+/// Deployment mode: in-cluster (K8s) or external bare-metal
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum DeploymentMode {
+    /// Deploy inside the operator's Kubernetes cluster
+    InCluster,
+    /// Provision external bare-metal servers (via provider API)
+    External,
+}
+
+/// Node pool role types
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum NodePoolRole {
+    /// Solana validator/RPC node
+    SolanaRpc,
+    /// Support services (QuestDB, PostgreSQL, Redis, Big Balls)
+    SupportServices,
+}
+
+/// Node pool specification
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+pub struct NodePoolSpec {
+    /// Role of this node pool
+    pub role: NodePoolRole,
+    /// Number of nodes in this pool
+    #[serde(default = "default_pool_replicas")]
+    pub replicas: i32,
+    /// Compute resources per node
+    pub resources: NodeResources,
+    /// Node-specific configuration
+    #[serde(default)]
+    pub config: Option<NodePoolConfig>,
+}
+
+fn default_pool_replicas() -> i32 { 1 }
+
+/// Node pool configuration
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+pub struct NodePoolConfig {
+    /// For SolanaRpc: node type (validator/rpc/archival)
+    #[serde(default)]
+    pub node_type: Option<NodeType>,
+    /// For SolanaRpc: container image
+    #[serde(default)]
+    pub image: Option<String>,
+    /// For SupportServices: list of services to deploy
+    #[serde(default)]
+    pub services: Option<Vec<SupportService>>,
+}
+
+/// Support services to deploy
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "kebab-case")]
+pub enum SupportService {
+    Questdb,
+    Postgres,
+    Redis,
+    BigBalls,
+}
+
+/// External cluster configuration
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+pub struct ExternalClusterSpec {
+    /// Provider for bare-metal servers
+    pub provider: Provider,
+    /// Preferred regions (in order of priority)
+    #[serde(default = "default_regions")]
+    pub region_preferences: Vec<String>,
+    /// Whether to bootstrap a new Kubernetes cluster (Talos)
+    #[serde(default)]
+    pub create_k8s_cluster: bool,
+    /// SSH keys for server access
+    #[serde(default)]
+    pub ssh_keys: Vec<String>,
+}
+
+fn default_regions() -> Vec<String> {
+    vec!["nl-ams".to_string(), "lt-siauliai".to_string()]
+}
+
 /// SolanaNodeSpec defines the desired state of SolanaNode
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
 #[kube(
@@ -23,15 +104,27 @@ pub enum Provider {
     finalizer = "solananodes.blockchain.5dlabs.io"
 )]
 pub struct SolanaNodeSpec {
-    /// Provider for bare-metal server
+    /// Deployment mode: in-cluster or external bare-metal
+    #[serde(default = "default_deployment_mode")]
+    pub deployment_mode: DeploymentMode,
+    
+    /// Node pools for the cluster (defines roles like solana-rpc, support-services)
+    #[serde(default)]
+    pub node_pools: Vec<NodePoolSpec>,
+    
+    /// External cluster configuration (when deployment_mode is External)
+    #[serde(default)]
+    pub external_cluster: Option<ExternalClusterSpec>,
+    
+    /// Provider for bare-metal server (legacy, use external_cluster.provider)
     #[serde(default = "default_provider")]
     pub provider: Provider,
     
-    /// Region for the bare-metal server (e.g., "lt-siauliai", "nl-ams")
+    /// Region for the bare-metal server (legacy, use external_cluster.region_preferences)
     #[serde(default = "default_region")]
     pub region: String,
     
-    /// Number of replicas
+    /// Number of replicas (legacy)
     #[serde(default = "default_replicas")]
     pub replicas: i32,
     
@@ -72,7 +165,8 @@ pub struct SolanaNodeSpec {
 }
 
 fn default_provider() -> Provider { Provider::Cherry }
-fn default_region() -> String { "lt-siauliai".to_string() }
+fn default_deployment_mode() -> DeploymentMode { DeploymentMode::External }
+fn default_region() -> String { "nl-ams".to_string() }
 fn default_replicas() -> i32 { 1 }
 fn default_node_type() -> NodeType { NodeType::Validator }
 fn default_rpc_port() -> i32 { 8899 }

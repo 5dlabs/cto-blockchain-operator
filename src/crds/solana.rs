@@ -32,7 +32,7 @@ pub enum NodePoolRole {
 }
 
 /// Node pool specification
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 pub struct NodePoolSpec {
     /// Role of this node pool
     pub role: NodePoolRole,
@@ -49,7 +49,7 @@ pub struct NodePoolSpec {
 fn default_pool_replicas() -> i32 { 1 }
 
 /// Node pool configuration
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 pub struct NodePoolConfig {
     /// For SolanaRpc: node type (validator/rpc/archival)
     #[serde(default)]
@@ -87,7 +87,7 @@ fn default_external_cluster_mode() -> ExternalClusterMode {
 }
 
 /// External cluster configuration
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 pub struct ExternalClusterSpec {
     /// Provider for bare-metal servers
     pub provider: Provider,
@@ -118,15 +118,14 @@ fn default_regions() -> Vec<String> {
 }
 
 /// SolanaNodeSpec defines the desired state of SolanaNode
-#[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 #[kube(
     group = "blockchain.5dlabs.io",
-    version = "v1alpha1", 
+    version = "v1alpha1",
     kind = "SolanaNode",
     namespaced,
     status = "SolanaNodeStatus",
-    derive = "PartialEq",
-    finalizer = "solananodes.blockchain.5dlabs.io"
+    derive = "PartialEq"
 )]
 pub struct SolanaNodeSpec {
     /// Deployment mode: in-cluster or external bare-metal
@@ -275,7 +274,7 @@ fn default_max_snapshots() -> i32 { 2 }
 fn default_wal_recovery() -> String { "skip_any_corrupted_record".to_string() }
 
 /// SolanaNodeStatus defines the observed state of SolanaNode
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default, PartialEq)]
 pub struct SolanaNodeStatus {
     /// Current phase
     pub phase: Option<NodePhase>,

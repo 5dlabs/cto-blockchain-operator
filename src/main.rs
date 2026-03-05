@@ -29,7 +29,7 @@ mod controller {
     use kube::api::{Patch, PatchParams};
 
     pub async fn run(solana_nodes: Api<SolanaNode>) {
-        kube::runtime::controller::Builder::new(solana_nodes, Default::default())
+        kube::runtime::Controller::new(solana_nodes, Default::default())
             .run(reconcile, error_policy, Arc::new(()))
             .for_each(|res| async move {
                 match res {
@@ -41,7 +41,6 @@ mod controller {
     }
 
     async fn reconcile(solana_node: Arc<SolanaNode>, _ctx: Arc<()>) -> Result<Action, Error> {
-        let solana_node = (*solana_node).clone();
         let client = kube::client::Client::try_default().await?;
         let ns = solana_node
             .namespace()
@@ -65,7 +64,7 @@ mod controller {
         .map_err(|e| Error::Finalizer(e.to_string()))
     }
 
-    async fn apply(solana_node: SolanaNode, client: Client) -> Result<Action, Error> {
+    async fn apply(solana_node: Arc<SolanaNode>, client: Client) -> Result<Action, Error> {
         info!("Applying SolanaNode: {}", solana_node.name_any());
 
         let ns = solana_node
@@ -94,7 +93,7 @@ mod controller {
         Ok(Action::requeue(Duration::from_secs(30)))
     }
 
-    async fn cleanup(solana_node: SolanaNode, _client: Client) -> Result<Action, Error> {
+    async fn cleanup(solana_node: Arc<SolanaNode>, _client: Client) -> Result<Action, Error> {
         info!("Cleaning up SolanaNode: {}", solana_node.name_any());
         Ok(Action::await_change())
     }

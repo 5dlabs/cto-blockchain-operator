@@ -97,11 +97,11 @@ impl MetalProvider for LatitudeProvider {
             ip_address: server.ip_address.unwrap_or_default(),
             hostname: server.name,
             status: ServerStatus::Provisioning,
-            region: server.region.unwrap_or(spec.region),
+            region: server.region.unwrap_or(spec.region.clone()),
             specs: ServerSpecs {
-                cpu_cores: server.specs.and_then(|s| s.cpus).unwrap_or(32),
-                memory_gb: server.specs.and_then(|s| s.memory_gb).unwrap_or(64),
-                storage_gb: server.specs.and_then(|s| s.storage_gb).unwrap_or(1000),
+                cpu_cores: server.specs.as_ref().and_then(|s| s.cpus).unwrap_or(32),
+                memory_gb: server.specs.as_ref().and_then(|s| s.memory_gb).unwrap_or(64),
+                storage_gb: server.specs.as_ref().and_then(|s| s.storage_gb).unwrap_or(1000),
             },
         })
     }
@@ -141,9 +141,9 @@ impl MetalProvider for LatitudeProvider {
             },
             region: server.region.unwrap_or_default(),
             specs: ServerSpecs {
-                cpu_cores: server.specs.and_then(|s| s.cpus).unwrap_or(32),
-                memory_gb: server.specs.and_then(|s| s.memory_gb).unwrap_or(64),
-                storage_gb: server.specs.and_then(|s| s.storage_gb).unwrap_or(1000),
+                cpu_cores: server.specs.as_ref().and_then(|s| s.cpus).unwrap_or(32),
+                memory_gb: server.specs.as_ref().and_then(|s| s.memory_gb).unwrap_or(64),
+                storage_gb: server.specs.as_ref().and_then(|s| s.storage_gb).unwrap_or(1000),
             },
         })
     }
@@ -202,9 +202,9 @@ impl MetalProvider for LatitudeProvider {
             },
             region: s.region.unwrap_or_default(),
             specs: ServerSpecs {
-                cpu_cores: s.specs.and_then(|sp| sp.cpus).unwrap_or(32),
-                memory_gb: s.specs.and_then(|sp| sp.memory_gb).unwrap_or(64),
-                storage_gb: s.specs.and_then(|sp| sp.storage_gb).unwrap_or(1000),
+                cpu_cores: s.specs.as_ref().and_then(|sp| sp.cpus).unwrap_or(32),
+                memory_gb: s.specs.as_ref().and_then(|sp| sp.memory_gb).unwrap_or(64),
+                storage_gb: s.specs.as_ref().and_then(|sp| sp.storage_gb).unwrap_or(1000),
             },
         }).collect())
     }

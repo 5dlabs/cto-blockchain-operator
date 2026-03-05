@@ -81,7 +81,7 @@ impl MetalProvider for OvhProvider {
         let url = format!("{}/dedicated/server", OVH_API_BASE);
         
         let request = OvhServerCreateRequest {
-            template_code: "ubuntu22.04", // simplified
+            template_code: "ubuntu22.04".to_string(), // simplified
             hostname: spec.name.clone(),
             datacenter_id: 0, // would need to lookup
         };

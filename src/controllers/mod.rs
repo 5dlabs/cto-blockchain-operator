@@ -1,3 +1,3 @@
 pub mod solana;
 
-pub use solana::SolanaController;
+pub use solana::{ControllerError, SolanaController};

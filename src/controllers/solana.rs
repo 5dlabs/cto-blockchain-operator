@@ -13,13 +13,13 @@ use k8s_openapi::api::apps::v1::{
 use k8s_openapi::api::core::v1::{
     Container, ContainerPort, PersistentVolumeClaim, PersistentVolumeClaimSpec, PodSpec,
     PodTemplateSpec, ResourceRequirements, SecretVolumeSource, Service, ServicePort, ServiceSpec,
-    Volume, VolumeMount, VolumeResourceRequirements,
+    Volume, VolumeMount,
 };
 use k8s_openapi::apimachinery::pkg::api::resource::Quantity;
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::{LabelSelector, ObjectMeta};
 use k8s_openapi::apimachinery::pkg::util::intstr::IntOrString;
 use kube::api::{Patch, PatchParams};
-use kube::{Api, Client, ResourceExt};
+use kube::{Api, Client, Resource, ResourceExt};
 use thiserror::Error;
 use tracing::*;
 
@@ -33,6 +33,8 @@ pub enum ControllerError {
     NodeError(String),
     #[error("Kubernetes API error: {0}")]
     Kubernetes(#[from] kube::Error),
+    #[error("Invalid configuration: {0}")]
+    InvalidConfig(String),
 }
 
 pub struct SolanaController {
@@ -70,6 +72,14 @@ impl SolanaController {
             DeploymentMode::External => {
                 let ext = crd.spec.external_cluster.clone();
 
+                let mode = ext
+                    .as_ref()
+                    .map(|e| e.mode.clone())
+                    .unwrap_or(ExternalClusterMode::AddWorkerToExistingCluster);
+
+                // Validate configuration before any provisioning side-effects.
+                validate_external_cluster_config(&ext, &mode)?;
+
                 let provider_kind = ext
                     .as_ref()
                     .map(|e| e.provider.clone())
@@ -87,18 +97,22 @@ impl SolanaController {
                     .map(|e| e.ssh_keys.clone())
                     .unwrap_or_default();
 
-                let created = provision_node_pools(provider.as_ref(), crd, &region, &ssh_keys).await?;
+                if ssh_keys.is_empty() {
+                    warn!(
+                        name = %name,
+                        "No SSH keys configured for external provisioning — \
+                         servers will be unreachable without key-based SSH access"
+                    );
+                }
 
-                let mode = ext
-                    .as_ref()
-                    .map(|e| e.mode.clone())
-                    .unwrap_or(ExternalClusterMode::AddWorkerToExistingCluster);
+                let created = provision_node_pools(provider.as_ref(), crd, &region, &ssh_keys).await?;
 
                 match mode {
                     ExternalClusterMode::AddWorkerToExistingCluster => {
                         info!(
-                            "Provisioned {} node(s) for existing external cluster join",
-                            created
+                            name = %name,
+                            created,
+                            "Provisioned node(s) for existing external cluster join"
                         );
                         Ok(SolanaNodeStatus {
                             phase: Some(NodePhase::Initializing),
@@ -108,9 +122,19 @@ impl SolanaController {
                         })
                     }
                     ExternalClusterMode::ProvisionNewCluster => {
+                        let auto_bootstrap = ext.as_ref().map(|e| e.create_k8s_cluster).unwrap_or(false);
+                        if !auto_bootstrap {
+                            warn!(
+                                name = %name,
+                                "ProvisionNewCluster with create_k8s_cluster=false: \
+                                 nodes provisioned but Kubernetes bootstrapping must be \
+                                 performed manually"
+                            );
+                        }
                         info!(
-                            "Provisioned {} node(s) for new external cluster bootstrap",
-                            created
+                            name = %name,
+                            created,
+                            "Provisioned node(s) for new external cluster bootstrap"
                         );
                         Ok(SolanaNodeStatus {
                             phase: Some(NodePhase::Pending),
@@ -122,6 +146,34 @@ impl SolanaController {
                 }
             }
         }
+    }
+}
+
+/// Validate the external cluster configuration for the requested mode.
+///
+/// This must be called before any provisioning side-effects so that obvious
+/// misconfigurations are rejected immediately with a clear error.
+pub fn validate_external_cluster_config(
+    ext: &Option<crate::crds::ExternalClusterSpec>,
+    mode: &ExternalClusterMode,
+) -> Result<(), ControllerError> {
+    let Some(spec) = ext.as_ref() else {
+        // Legacy path: external_cluster not set, no spec-level validation possible.
+        return Ok(());
+    };
+
+    match mode {
+        ExternalClusterMode::AddWorkerToExistingCluster => {
+            if spec.existing_cluster_name.is_none() && spec.existing_cluster_endpoint.is_none() {
+                return Err(ControllerError::InvalidConfig(
+                    "mode=add-worker-to-existing-cluster requires at least one of: \
+                     existing_cluster_name, existing_cluster_endpoint"
+                        .into(),
+                ));
+            }
+            Ok(())
+        }
+        ExternalClusterMode::ProvisionNewCluster => Ok(()),
     }
 }
 
@@ -197,23 +249,26 @@ async fn provision_node_pools(
             ),
         ]
     } else {
-        solana_node
-            .spec
-            .node_pools
-            .iter()
-            .map(|p| {
-                let plan = match p.role {
-                    NodePoolRole::SolanaRpc => "solana-server-gen5".to_string(),
-                    NodePoolRole::SupportServices => "c3.large.x86".to_string(),
-                };
-                let image = p
-                    .config
-                    .as_ref()
-                    .and_then(|c| c.image.clone())
-                    .unwrap_or_else(|| "ubuntu_22_04".to_string());
-                (p.role.clone(), p.replicas.max(1), plan, image)
-            })
-            .collect::<Vec<_>>()
+        let mut result: Vec<(NodePoolRole, i32, String, String)> = Vec::with_capacity(solana_node.spec.node_pools.len());
+        for p in &solana_node.spec.node_pools {
+            if p.replicas <= 0 {
+                return Err(ControllerError::InvalidConfig(format!(
+                    "node pool {:?} has invalid replicas: {} (must be >= 1)",
+                    p.role, p.replicas
+                )));
+            }
+            let plan = match p.role {
+                NodePoolRole::SolanaRpc => "solana-server-gen5".to_string(),
+                NodePoolRole::SupportServices => "c3.large.x86".to_string(),
+            };
+            let image = p
+                .config
+                .as_ref()
+                .and_then(|c| c.image.clone())
+                .unwrap_or_else(|| "ubuntu_22_04".to_string());
+            result.push((p.role.clone(), p.replicas, plan, image));
+        }
+        result
     };
 
     let mut created = 0usize;
@@ -435,7 +490,7 @@ pub fn build_statefulset(solana_node: &SolanaNode) -> StatefulSet {
                 },
                 spec: Some(PersistentVolumeClaimSpec {
                     access_modes: Some(vec!["ReadWriteOnce".to_string()]),
-                    resources: Some(VolumeResourceRequirements {
+                    resources: Some(ResourceRequirements {
                         requests: Some(BTreeMap::from([(
                             "storage".to_string(),
                             Quantity("500Gi".to_string()),
@@ -550,5 +605,210 @@ fn phase_from_statefulset_status(
         slot_height: None,
         healthy: Some(healthy),
         slots_behind: None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use k8s_openapi::api::apps::v1::{StatefulSet, StatefulSetStatus};
+    use k8s_openapi::api::core::v1::Service;
+
+    fn make_statefulset_status(
+        ready: Option<i32>,
+        current: Option<i32>,
+        observed_generation: Option<i64>,
+    ) -> StatefulSetStatus {
+        StatefulSetStatus {
+            ready_replicas: ready,
+            current_replicas: current,
+            observed_generation,
+            ..Default::default()
+        }
+    }
+
+    // ── observe_status ────────────────────────────────────────────────────────
+
+    #[test]
+    fn observe_status_pending_when_no_statefulset() {
+        let status = observe_status(None, Some(&Service::default()), 1);
+        assert_eq!(status.phase, Some(NodePhase::Pending));
+        assert_eq!(status.healthy, Some(false));
+    }
+
+    #[test]
+    fn observe_status_pending_when_no_service() {
+        let status = observe_status(Some(&StatefulSet::default()), None, 1);
+        assert_eq!(status.phase, Some(NodePhase::Pending));
+        assert_eq!(status.healthy, Some(false));
+    }
+
+    #[test]
+    fn observe_status_pending_when_nothing() {
+        let status = observe_status(None, None, 1);
+        assert_eq!(status.phase, Some(NodePhase::Pending));
+        assert_eq!(status.healthy, Some(false));
+    }
+
+    // ── phase_from_statefulset_status ─────────────────────────────────────────
+
+    #[test]
+    fn phase_running_when_ready_meets_desired() {
+        let sts_status = make_statefulset_status(Some(2), Some(2), Some(1));
+        let result = phase_from_statefulset_status(&sts_status, 2);
+        assert_eq!(result.phase, Some(NodePhase::Running));
+        assert_eq!(result.healthy, Some(true));
+    }
+
+    #[test]
+    fn phase_initializing_when_current_but_not_ready() {
+        let sts_status = make_statefulset_status(Some(0), Some(1), Some(1));
+        let result = phase_from_statefulset_status(&sts_status, 2);
+        assert_eq!(result.phase, Some(NodePhase::Initializing));
+        assert_eq!(result.healthy, Some(false));
+    }
+
+    #[test]
+    fn phase_initializing_when_observed_generation_set() {
+        // current=0 but observed_generation is Some → StatefulSet was seen by controller
+        let sts_status = make_statefulset_status(Some(0), Some(0), Some(1));
+        let result = phase_from_statefulset_status(&sts_status, 1);
+        assert_eq!(result.phase, Some(NodePhase::Initializing));
+        assert_eq!(result.healthy, Some(false));
+    }
+
+    #[test]
+    fn phase_pending_when_no_current_replicas_and_no_generation() {
+        let sts_status = make_statefulset_status(None, None, None);
+        let result = phase_from_statefulset_status(&sts_status, 1);
+        assert_eq!(result.phase, Some(NodePhase::Pending));
+        assert_eq!(result.healthy, Some(false));
+    }
+
+    #[test]
+    fn phase_unhealthy_when_desired_is_zero() {
+        // desired_replicas=0 makes healthy always false even if ready=0
+        let sts_status = make_statefulset_status(Some(0), Some(0), None);
+        let result = phase_from_statefulset_status(&sts_status, 0);
+        assert_eq!(result.healthy, Some(false));
+    }
+
+    // ── validate_external_cluster_config ─────────────────────────────────────
+
+    #[test]
+    fn validate_add_worker_ok_with_cluster_name() {
+        use crate::crds::ExternalClusterSpec;
+        let ext = Some(ExternalClusterSpec {
+            provider: crate::crds::Provider::Cherry,
+            mode: ExternalClusterMode::AddWorkerToExistingCluster,
+            region_preferences: vec!["nl-ams".to_string()],
+            existing_cluster_name: Some("prod-cluster".to_string()),
+            existing_cluster_endpoint: None,
+            create_k8s_cluster: false,
+            ssh_keys: vec![],
+        });
+        let result = validate_external_cluster_config(&ext, &ExternalClusterMode::AddWorkerToExistingCluster);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_add_worker_ok_with_cluster_endpoint() {
+        use crate::crds::ExternalClusterSpec;
+        let ext = Some(ExternalClusterSpec {
+            provider: crate::crds::Provider::Latitude,
+            mode: ExternalClusterMode::AddWorkerToExistingCluster,
+            region_preferences: vec!["us-dal".to_string()],
+            existing_cluster_name: None,
+            existing_cluster_endpoint: Some("https://10.0.0.1:6443".to_string()),
+            create_k8s_cluster: false,
+            ssh_keys: vec![],
+        });
+        let result = validate_external_cluster_config(&ext, &ExternalClusterMode::AddWorkerToExistingCluster);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_add_worker_errors_without_cluster_info() {
+        use crate::crds::ExternalClusterSpec;
+        let ext = Some(ExternalClusterSpec {
+            provider: crate::crds::Provider::Cherry,
+            mode: ExternalClusterMode::AddWorkerToExistingCluster,
+            region_preferences: vec!["nl-ams".to_string()],
+            existing_cluster_name: None,
+            existing_cluster_endpoint: None,
+            create_k8s_cluster: false,
+            ssh_keys: vec![],
+        });
+        let result = validate_external_cluster_config(&ext, &ExternalClusterMode::AddWorkerToExistingCluster);
+        assert!(matches!(result, Err(ControllerError::InvalidConfig(_))));
+        if let Err(ControllerError::InvalidConfig(msg)) = result {
+            assert!(msg.contains("existing_cluster_name"));
+        }
+    }
+
+    #[test]
+    fn validate_provision_new_cluster_always_ok() {
+        use crate::crds::ExternalClusterSpec;
+        // ProvisionNewCluster has no required fields beyond the spec itself
+        let ext = Some(ExternalClusterSpec {
+            provider: crate::crds::Provider::Ovh,
+            mode: ExternalClusterMode::ProvisionNewCluster,
+            region_preferences: vec![],
+            existing_cluster_name: None,
+            existing_cluster_endpoint: None,
+            create_k8s_cluster: true,
+            ssh_keys: vec![],
+        });
+        let result = validate_external_cluster_config(&ext, &ExternalClusterMode::ProvisionNewCluster);
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_none_ext_always_ok() {
+        // Legacy path: external_cluster not set → no validation
+        let result = validate_external_cluster_config(
+            &None,
+            &ExternalClusterMode::AddWorkerToExistingCluster,
+        );
+        assert!(result.is_ok());
+    }
+
+    // ── build_provider env var validation ─────────────────────────────────────
+
+    #[test]
+    fn build_provider_cherry_errors_without_api_key() {
+        // Ensure CHERRY_API_KEY is not set so we get the expected error
+        std::env::remove_var("CHERRY_API_KEY");
+        let result = build_provider(&CrdProvider::Cherry);
+        assert!(matches!(result, Err(ControllerError::ProvisionError(_))));
+        if let Err(ControllerError::ProvisionError(msg)) = result {
+            assert!(msg.contains("CHERRY_API_KEY"));
+        }
+    }
+
+    #[test]
+    fn build_provider_latitude_errors_without_api_key() {
+        std::env::remove_var("LATITUDE_API_KEY");
+        let result = build_provider(&CrdProvider::Latitude);
+        assert!(matches!(result, Err(ControllerError::ProvisionError(_))));
+        if let Err(ControllerError::ProvisionError(msg)) = result {
+            assert!(msg.contains("LATITUDE_API_KEY"));
+        }
+    }
+
+    #[test]
+    fn build_provider_ovh_errors_without_consumer_key() {
+        // Set app key and secret but leave consumer key unset
+        std::env::set_var("OVH_APPLICATION_KEY", "dummy_key");
+        std::env::set_var("OVH_APPLICATION_SECRET", "dummy_secret");
+        std::env::remove_var("OVH_CONSUMER_KEY");
+        let result = build_provider(&CrdProvider::Ovh);
+        assert!(matches!(result, Err(ControllerError::ProvisionError(_))));
+        if let Err(ControllerError::ProvisionError(msg)) = result {
+            assert!(msg.contains("OVH_CONSUMER_KEY"));
+        }
+        // Cleanup
+        std::env::remove_var("OVH_APPLICATION_KEY");
+        std::env::remove_var("OVH_APPLICATION_SECRET");
     }
 }

@@ -2,7 +2,7 @@ use cto_blockchain_operator::controllers::solana::{
     build_service, build_statefulset, validate_external_cluster_config, ControllerError,
 };
 use cto_blockchain_operator::crds::{
-    DeploymentMode, ExternalClusterMode, ExternalClusterSpec, NodeConfig, NodePhase, NodeResources,
+    DeploymentMode, ExternalClusterMode, ExternalClusterSpec, NodeConfig, NodeResources,
     NodeType, Provider, SolanaNode, SolanaNodeSpec,
 };
 use k8s_openapi::apimachinery::pkg::apis::meta::v1::ObjectMeta;

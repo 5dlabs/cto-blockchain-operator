@@ -1,5 +1,6 @@
 use cto_blockchain_operator::providers::latitude::LatitudeProvider;
-use cto_blockchain_operator::providers::{MetalProvider, ServerSpec};
+use cto_blockchain_operator::models::ServerSpec;
+use cto_blockchain_operator::providers::MetalProvider;
 
 #[tokio::test]
 async fn test_latitude_provider_create_server() {

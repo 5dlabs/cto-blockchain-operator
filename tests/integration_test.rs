@@ -1,8 +1,9 @@
 //! Integration tests for the CTO Blockchain Operator
 //! Tests all supported providers and blockchain types
 
-use cto_blockchain_operator::providers::{cherry::CherryProvider, latitude::LatitudeProvider, ovh::OvhProvider, MetalProvider, ServerSpec};
-use cto_blockchain_operator::crds::{SolanaNode, SolanaNodeSpec, NodeType, NodeResources, NodeConfig};
+use cto_blockchain_operator::models::ServerSpec;
+use cto_blockchain_operator::providers::{cherry::CherryProvider, latitude::LatitudeProvider, ovh::OvhProvider, MetalProvider};
+use cto_blockchain_operator::crds::{DeploymentMode, NodeConfig, NodeResources, NodeType, Provider, SolanaNodeSpec};
 
 #[tokio::test]
 async fn test_all_providers_create_server() {
@@ -46,6 +47,11 @@ async fn test_all_providers_create_server() {
 async fn test_solana_node_creation() {
     // Test creating SolanaNode specifications for different node types
     let validator_spec = SolanaNodeSpec {
+        deployment_mode: DeploymentMode::InCluster,
+        node_pools: vec![],
+        external_cluster: None,
+        provider: Provider::Cherry,
+        region: "nl-ams".to_string(),
         replicas: 1,
         node_type: NodeType::Validator,
         rpc_port: 8899,

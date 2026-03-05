@@ -1,18 +1,24 @@
 //! Test that all CRDs can be properly loaded and validated
 
-use kube::{Api, Client};
-use cto_blockchain_operator::crds::{SolanaNode, SolanaNodeSpec, NodeType, NodeResources, NodeConfig};
+use cto_blockchain_operator::crds::{
+    DeploymentMode, NodeConfig, NodeResources, NodeType, Provider, SolanaNode, SolanaNodeSpec,
+};
 
 #[tokio::test]
 async fn test_crd_definitions() {
     // This test would normally connect to a test Kubernetes cluster
     // For now, we'll just validate that our CRD structs can be created
     println!("Testing CRD definitions...");
-    
+
     // Test SolanaNode CRD
     let solana_node = SolanaNode {
         metadata: Default::default(),
         spec: SolanaNodeSpec {
+            deployment_mode: DeploymentMode::InCluster,
+            node_pools: vec![],
+            external_cluster: None,
+            provider: Provider::Cherry,
+            region: "nl-ams".to_string(),
             replicas: 1,
             node_type: NodeType::Validator,
             rpc_port: 8899,
@@ -41,11 +47,11 @@ async fn test_crd_definitions() {
         },
         status: None,
     };
-    
+
     assert_eq!(solana_node.spec.node_type, NodeType::Validator);
     assert_eq!(solana_node.spec.rpc_port, 8899);
     assert_eq!(solana_node.spec.gossip_port, 8001);
-    
+
     println!("All CRD definitions are valid!");
 }
 
@@ -53,9 +59,14 @@ async fn test_crd_definitions() {
 async fn test_all_blockchain_crds() {
     // Test that we can define specs for all supported blockchains
     println!("Testing all blockchain CRD specifications...");
-    
+
     // Solana
     let solana_spec = SolanaNodeSpec {
+        deployment_mode: DeploymentMode::InCluster,
+        node_pools: vec![],
+        external_cluster: None,
+        provider: Provider::Cherry,
+        region: "nl-ams".to_string(),
         replicas: 1,
         node_type: NodeType::Validator,
         rpc_port: 8899,
@@ -82,10 +93,9 @@ async fn test_all_blockchain_crds() {
         known_validators: None,
         entrypoints: None,
     };
-    
+
     // In a real implementation, we would also test SuiValidator and AptosNode CRDs
     // For now, we're demonstrating the pattern
-    
     assert_eq!(solana_spec.node_type, NodeType::Validator);
     println!("All blockchain CRD specifications are valid!");
 }

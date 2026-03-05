@@ -1,0 +1,72 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: SolanaNode
+metadata:
+  name: solana-rpc-cluster
+  namespace: cto
+spec:
+  # New fields for external cluster mode
+  deploymentMode: external
+  provider: cherry
+  region: nl-ams
+  
+  # External cluster configuration
+  externalCluster:
+    mode: add-worker-to-existing-cluster
+    regionPreferences:
+    - nl-ams
+    - lt-siauliai
+    existingClusterName: talos-cluster
+    existingClusterEndpoint: https://talos-cluster.example.com:6443
+    createK8sCluster: false
+    sshKeys: []
+  
+  # Node pools - defines what runs on each node
+  nodePools:
+  - role: solana-rpc
+    replicas: 1
+    resources:
+      cpuRequest: "28"
+      memoryRequest: 64Gi
+      cpuLimit: "32"
+      memoryLimit: 128Gi
+    config:
+      nodeType: rpc
+      image: anzaxyz/agave:v3.1.9
+      services: []
+  
+  - role: support-services
+    replicas: 1
+    resources:
+      cpuRequest: "8"
+      memoryRequest: 32Gi
+    config:
+      services:
+      - questdb
+      - postgres
+      - redis
+      - big-balls
+  
+  # Legacy fields (still supported for backward compat)
+  replicas: 1
+  nodeType: rpc
+  rpcPort: 8899
+  gossipPort: 8001
+  resources:
+    cpuRequest: "28"
+    memoryRequest: 64Gi
+  config:
+    expectedGenesisHash: 5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d
+    limitLedgerSize: 200000000
+    fullRpcApi: true
+    enableAccountsDiskIndex: true
+    skipStartupLedgerVerification: true
+    rpcThreads: 128
+    maximumFullSnapshotsToRetain: 2
+    walRecoveryMode: skip_any_corrupted_record
+  image: anzaxyz/agave:v3.1.9
+  enableVoting: false
+  identitySecret: solana-identity
+  knownValidators: []
+  entrypoints:
+  - entrypoint.mainnet-beta.solana.com
+  - entrypoint.solana.com

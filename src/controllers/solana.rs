@@ -737,7 +737,7 @@ mod tests {
         let ext = Some(ExternalClusterSpec {
             provider: crate::crds::Provider::Cherry,
             mode: ExternalClusterMode::AddWorkerToExistingCluster,
-            region_preferences: vec!["nl-ams".to_string()],
+            region_preferences: vec!["lt-siauliai".to_string()],
             existing_cluster_name: Some("prod-cluster".to_string()),
             existing_cluster_endpoint: None,
             create_k8s_cluster: false,
@@ -769,7 +769,7 @@ mod tests {
         let ext = Some(ExternalClusterSpec {
             provider: crate::crds::Provider::Cherry,
             mode: ExternalClusterMode::AddWorkerToExistingCluster,
-            region_preferences: vec!["nl-ams".to_string()],
+            region_preferences: vec!["lt-siauliai".to_string()],
             existing_cluster_name: None,
             existing_cluster_endpoint: None,
             create_k8s_cluster: false,

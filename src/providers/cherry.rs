@@ -256,8 +256,8 @@ impl CherryProvider {
 impl MetalProvider for CherryProvider {
     async fn create_server(&self, spec: &ServerSpec) -> Result<Server, ProviderError> {
         info!(
-            "Creating server on Cherry: {} (team_id={}, project_id={})",
-            spec.name, self.team_id, self.project_id
+            "Creating server on Cherry: {} (team_id={}, project_id={}, plan={}, region={})",
+            spec.name, self.team_id, self.project_id, spec.plan, spec.region
         );
 
         let ssh_keys = spec
@@ -273,7 +273,11 @@ impl MetalProvider for CherryProvider {
             ssh_keys,
         };
 
+        info!("Cherry request payload: {:?}", payload);
+
         let url = self.endpoint(&format!("/v1/projects/{}/servers", self.project_id));
+        info!("Cherry request URL: {}", url);
+        
         let created: CherryServerResponse = self
             .send_json(
                 self.request(self.client.post(url))
@@ -286,7 +290,7 @@ impl MetalProvider for CherryProvider {
     }
 
     async fn get_server(&self, id: &str) -> Result<Server, ProviderError> {
-        info!("Getting server from Cherry: {}", id);
+        info!(payload = debug("Getting server from Cherry: {}", id);
 
         let url = self.endpoint(&format!("/v1/servers/{id}"));
         let server: CherryServerResponse = self
@@ -300,7 +304,7 @@ impl MetalProvider for CherryProvider {
     }
 
     async fn delete_server(&self, id: &str) -> Result<(), ProviderError> {
-        info!("Deleting server from Cherry: {}", id);
+        info!(payload = debug("Deleting server from Cherry: {}", id);
 
         let url = self.endpoint(&format!("/v1/servers/{id}"));
         self.send_no_content(self.request(self.client.delete(url)))
@@ -308,7 +312,7 @@ impl MetalProvider for CherryProvider {
     }
 
     async fn list_servers(&self) -> Result<Vec<Server>, ProviderError> {
-        info!(
+        info!(payload = debug(
             "Listing servers from Cherry (project_id={})",
             self.project_id
         );
@@ -329,7 +333,7 @@ impl MetalProvider for CherryProvider {
     }
 
     async fn start_server(&self, id: &str) -> Result<(), ProviderError> {
-        info!("Starting server on Cherry: {}", id);
+        info!(payload = debug("Starting server on Cherry: {}", id);
 
         let url = self.endpoint(&format!("/v1/servers/{id}/actions"));
         let payload = CherryServerActionRequest {
@@ -347,7 +351,7 @@ impl MetalProvider for CherryProvider {
     }
 
     async fn stop_server(&self, id: &str) -> Result<(), ProviderError> {
-        info!("Stopping server on Cherry: {}", id);
+        info!(payload = debug("Stopping server on Cherry: {}", id);
 
         let url = self.endpoint(&format!("/v1/servers/{id}/actions"));
         let payload = CherryServerActionRequest {

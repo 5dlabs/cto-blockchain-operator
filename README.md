@@ -1,5 +1,7 @@
 # CTO Blockchain Operator
 
+> ⚠️ **Under Development** — This project is currently under active development and is **not yet production-ready**. APIs, custom resources, and behavior may change without notice. Use at your own risk.
+
 A cloud-agnostic blockchain infrastructure operator built from scratch in Rust for deploying and managing blockchain nodes on bare-metal and cloud providers with a focus on performance, interoperability, and AI agent infrastructure.
 
 ## Overview

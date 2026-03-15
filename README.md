@@ -24,9 +24,10 @@ Unlike existing solutions, this operator is built from scratch in Rust with perf
 | **NEAR** | Validator, RPC Node | 8 cores, 48GB RAM, 3TB NVMe | ✅ Documented |
 | **Berachain** | Validator, RPC Node | 4 cores, 16GB RAM, 1TB SSD | ✅ Documented |
 
-### L2 Blockchains
+### L2 / Sidechain Blockchains
 | Chain | Node Types | Hardware Requirements | Status |
 |-------|------------|----------------------|--------|
+| **Polygon PoS** | Full, Archive (Erigon), Sentry | 16 cores, 64-128GB RAM, 8-16TB NVMe | ✅ Implemented |
 | **Arbitrum** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
 | **Base** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
 | **Optimism** | Full Node | 8+ cores, 64GB RAM, NVMe SSD | ✅ Documented |
@@ -148,6 +149,35 @@ spec:
     expectedGenesisHash: "5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpKuc147dw2N9d"
     fullRpcApi: true
     rpcThreads: 128
+```
+
+### PolygonNode
+
+Polygon PoS nodes run two co-located services: Heimdall (consensus) and Bor/Erigon (execution).
+
+```yaml
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: PolygonNode
+metadata:
+  name: mainnet-full
+spec:
+  nodeType: full
+  network: mainnet
+  heimdall:
+    image: "0xpolygon/heimdall-v2:v0.6.0"
+    seeds:
+      - "1500161dd491b67fb1ac81868952be49e2509c9f@52.78.36.216:26656"
+  bor:
+    image: "0xpolygon/bor:v2.6.3"
+    httpEnabled: true
+    maxPeers: 50
+  resources:
+    cpuRequest: "16"
+    memoryRequest: "64Gi"
+  storage:
+    storageClass: "csi-cinder-high-speed"
+    heimdallSize: "1Ti"
+    executionSize: "8Ti"
 ```
 
 ## Development

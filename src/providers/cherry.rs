@@ -1,4 +1,5 @@
-use super::{MetalProvider, ProviderError, Server, ServerSpec, ServerSpecs, ServerStatus};
+use super::{MetalProvider, ProviderError};
+use crate::models::{Server, ServerSpec, ServerSpecs, ServerStatus};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};

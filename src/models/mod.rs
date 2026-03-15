@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NodeStatus {
-    pub phase: NodePhase,
+    pub phase: Option<NodePhase>,
     pub slot_height: Option<i64>,
     pub healthy: Option<bool>,
     pub slots_behind: Option<i32>,

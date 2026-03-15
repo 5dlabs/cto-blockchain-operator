@@ -1,0 +1,293 @@
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: polygonnodes.blockchain.5dlabs.io
+spec:
+  group: blockchain.5dlabs.io
+  names:
+    kind: PolygonNode
+    listKind: PolygonNodeList
+    plural: polygonnodes
+    singular: polygonnode
+    shortNames:
+    - pn
+  scope: Namespaced
+  versions:
+  - name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: PolygonNode is the Schema for the polygonnodes API
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object.'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents.'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: PolygonNodeSpec defines the desired state of a Polygon PoS node
+            properties:
+              nodeType:
+                description: Type of Polygon node
+                type: string
+                enum:
+                - full
+                - archive
+                - sentry
+                default: full
+              network:
+                description: Polygon network
+                type: string
+                enum:
+                - mainnet
+                - amoy
+                default: mainnet
+              deploymentTarget:
+                description: Deployment target (in-cluster or bare-metal)
+                type: string
+                enum:
+                - incluster
+                - baremetal
+                default: incluster
+              bareMetal:
+                description: Bare-metal server configuration
+                properties:
+                  provider:
+                    description: Provider name
+                    type: string
+                  serverId:
+                    description: Server ID
+                    type: string
+                  plan:
+                    description: Server plan
+                    type: string
+                  region:
+                    description: Deployment region
+                    type: string
+                required:
+                - provider
+                type: object
+              resources:
+                description: Compute resources
+                properties:
+                  cpuRequest:
+                    description: CPU request
+                    type: string
+                    default: "16"
+                  memoryRequest:
+                    description: Memory request
+                    type: string
+                    default: "64Gi"
+                  cpuLimit:
+                    description: CPU limit (optional)
+                    type: string
+                  memoryLimit:
+                    description: Memory limit (optional)
+                    type: string
+                type: object
+              heimdall:
+                description: Heimdall v2 consensus layer configuration
+                properties:
+                  image:
+                    description: Container image
+                    type: string
+                    default: "0xpolygon/heimdall-v2:v0.6.0"
+                  seeds:
+                    description: P2P seed nodes
+                    items:
+                      type: string
+                    type: array
+                  p2pPort:
+                    description: P2P listen port
+                    type: integer
+                    default: 26656
+                  rpcPort:
+                    description: CometBFT RPC port
+                    type: integer
+                    default: 26657
+                  restPort:
+                    description: REST API port (used by Bor)
+                    type: integer
+                    default: 1317
+                  metricsPort:
+                    description: Prometheus metrics port
+                    type: integer
+                    default: 26660
+                  genesisUrl:
+                    description: URL to download genesis.json
+                    type: string
+                  extraArgs:
+                    description: Extra command-line arguments
+                    items:
+                      type: string
+                    type: array
+                type: object
+              bor:
+                description: Bor execution layer configuration (Full/Sentry nodes)
+                properties:
+                  image:
+                    description: Container image
+                    type: string
+                    default: "0xpolygon/bor:v2.6.3"
+                  bootnodes:
+                    description: Bootnode ENR addresses
+                    items:
+                      type: string
+                    type: array
+                  p2pPort:
+                    description: P2P listen port
+                    type: integer
+                    default: 30303
+                  httpPort:
+                    description: HTTP RPC port
+                    type: integer
+                    default: 8545
+                  wsPort:
+                    description: WebSocket RPC port
+                    type: integer
+                    default: 8546
+                  metricsPort:
+                    description: Prometheus metrics port
+                    type: integer
+                    default: 9091
+                  httpEnabled:
+                    description: Enable HTTP RPC
+                    type: boolean
+                    default: true
+                  httpApi:
+                    description: HTTP RPC API namespaces
+                    type: string
+                    default: "eth,net,web3,txpool,bor"
+                  wsEnabled:
+                    description: Enable WebSocket RPC
+                    type: boolean
+                    default: false
+                  maxPeers:
+                    description: Maximum number of peers
+                    type: integer
+                    default: 50
+                  extraArgs:
+                    description: Extra command-line arguments
+                    items:
+                      type: string
+                    type: array
+                type: object
+              erigon:
+                description: Erigon execution layer configuration (Archive nodes)
+                properties:
+                  image:
+                    description: Container image
+                    type: string
+                    default: "erigontech/erigon:v3.2.2"
+                  p2pPort:
+                    description: P2P listen port
+                    type: integer
+                    default: 30303
+                  httpPort:
+                    description: HTTP RPC port
+                    type: integer
+                    default: 8545
+                  metricsPort:
+                    description: Prometheus metrics port
+                    type: integer
+                    default: 9091
+                  pruneMode:
+                    description: Prune mode
+                    type: string
+                    default: archive
+                  chain:
+                    description: Chain identifier
+                    type: string
+                  extraArgs:
+                    description: Extra command-line arguments
+                    items:
+                      type: string
+                    type: array
+                type: object
+              storage:
+                description: Storage configuration
+                properties:
+                  storageClass:
+                    description: Kubernetes StorageClass name
+                    type: string
+                    default: "csi-cinder-high-speed"
+                  heimdallSize:
+                    description: Heimdall data volume size
+                    type: string
+                    default: "1Ti"
+                  executionSize:
+                    description: Execution layer data volume size
+                    type: string
+                    default: "8Ti"
+                type: object
+              enableMetrics:
+                description: Enable Prometheus metrics endpoints
+                type: boolean
+                default: true
+            required:
+            - resources
+            - storage
+            type: object
+          status:
+            description: PolygonNodeStatus defines the observed state of PolygonNode
+            properties:
+              phase:
+                description: Current phase
+                type: string
+                enum:
+                - pending
+                - initializing
+                - heimdallsyncing
+                - executionsyncing
+                - running
+                - error
+              heimdallSynced:
+                description: Whether Heimdall is synced
+                type: boolean
+              heimdallHeight:
+                description: Heimdall block height
+                type: integer
+                format: int64
+              executionSynced:
+                description: Whether execution layer is synced
+                type: boolean
+              executionBlock:
+                description: Execution layer block number
+                type: integer
+                format: int64
+              healthy:
+                description: Whether the node is healthy
+                type: boolean
+              peers:
+                description: Number of connected peers
+                type: integer
+              message:
+                description: Human-readable status message
+                type: string
+            type: object
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+    additionalPrinterColumns:
+    - name: Type
+      type: string
+      jsonPath: .spec.nodeType
+    - name: Network
+      type: string
+      jsonPath: .spec.network
+    - name: Phase
+      type: string
+      jsonPath: .status.phase
+    - name: Healthy
+      type: boolean
+      jsonPath: .status.healthy
+    - name: Age
+      type: date
+      jsonPath: .metadata.creationTimestamp

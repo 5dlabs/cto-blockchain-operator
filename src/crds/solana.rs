@@ -3,15 +3,13 @@ use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// SolanaNodeSpec defines the desired state of SolanaNode
-#[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema)]
+#[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
 #[kube(
     group = "blockchain.5dlabs.io",
-    version = "v1alpha1", 
+    version = "v1alpha1",
     kind = "SolanaNode",
     namespaced,
-    status = "SolanaNodeStatus",
-    derive = "PartialEq",
-    finalizer = "solananodes.blockchain.5dlabs.io"
+    status = "SolanaNodeStatus"
 )]
 pub struct SolanaNodeSpec {
     /// Number of replicas
@@ -137,7 +135,7 @@ fn default_max_snapshots() -> i32 { 2 }
 fn default_wal_recovery() -> String { "skip_any_corrupted_record".to_string() }
 
 /// SolanaNodeStatus defines the observed state of SolanaNode
-#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default)]
+#[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default, PartialEq)]
 pub struct SolanaNodeStatus {
     /// Current phase
     pub phase: Option<NodePhase>,

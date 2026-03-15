@@ -1,0 +1,35 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: PolygonNode
+metadata:
+  name: mainnet-sentry
+  namespace: default
+spec:
+  nodeType: sentry
+  network: mainnet
+  deploymentTarget: incluster
+  resources:
+    cpuRequest: "16"
+    memoryRequest: "64Gi"
+    cpuLimit: "32"
+    memoryLimit: "128Gi"
+  heimdall:
+    image: "0xpolygon/heimdall-v2:v0.6.0"
+    seeds:
+      - "1500161dd491b67fb1ac81868952be49e2509c9f@52.78.36.216:26656"
+      - "dd4a3f1750af5765266eaa5b9c3bfd11048cd398@18.138.56.214:26656"
+      - "8ea4f592ad6cc38d7532aff418d1fb97052463af@34.240.245.39:26656"
+      - "e772e1fb8c3492a9570a377a5eafdb1dc53cd778@54.194.245.5:26656"
+    genesisUrl: "https://raw.githubusercontent.com/maticnetwork/heimdall-v2/main/genesis/mainnet/genesis.json"
+  bor:
+    image: "0xpolygon/bor:v2.6.3"
+    bootnodes:
+      - "enode://b8f1cc9c5d4403703fbf377116469667d2b1823c0daf16b7250aa576bacf399e42c3930ccfcb02c5c23f7c7b825e20e6c0d68ddfd90e1a0e8e67508e65e97a502@13.212.254.46:30303"
+      - "enode://8729e0c825f3d9cad382555f3e46dcff21af323e89025a0e6312df541f4a9e73abfa562d64906f5e59c51fe6f0501b3e61b07979f96c8bf2cc9b90afff1e88e8f@18.143.153.21:30303"
+    httpEnabled: false
+    wsEnabled: false
+    maxPeers: 100
+  storage:
+    storageClass: "csi-cinder-high-speed"
+    heimdallSize: "1Ti"
+    executionSize: "8Ti"
+  enableMetrics: true

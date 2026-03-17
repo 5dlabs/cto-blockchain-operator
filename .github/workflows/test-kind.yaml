@@ -2,9 +2,9 @@ name: Test with KinD
 
 on:
   push:
-    branches: [ main ]
+    branches: [ master ]
   pull_request:
-    branches: [ main ]
+    branches: [ master ]
 
 jobs:
   unit-tests:
@@ -175,16 +175,23 @@ jobs:
         # Validate Polygon CRD
         kubectl get crds | grep polygonnodes
 
-        # Deploy example Polygon nodes
+        # Deploy example Polygon nodes (all node types + smoke test)
         kubectl apply -f examples/polygon-full-node.yaml
         kubectl apply -f examples/polygon-archive-node.yaml
         kubectl apply -f examples/polygon-sentry-node.yaml
+        kubectl apply -f examples/polygon-amoy-smoke-test.yaml
 
         # Wait for resources to be created
-        sleep 10
+        sleep 5
 
-        # Check status
+        # Check status and verify all 4 CRs were accepted
         kubectl get polygonnodes
+        POLYGON_COUNT=$(kubectl get polygonnodes --no-headers | wc -l)
+        if [ "$POLYGON_COUNT" -ne 4 ]; then
+          echo "Expected 4 PolygonNode CRs, got $POLYGON_COUNT"
+          exit 1
+        fi
+        echo "All 4 Polygon node CRs accepted successfully"
 
     - name: Test all blockchain types
       run: |
@@ -215,11 +222,11 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        kind delete cluster
+        kind delete cluster --name cto-test
 
   build-and-push:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: github.ref == 'refs/heads/master'
     needs: kind-test
     steps:
     - name: Checkout code

@@ -35,6 +35,17 @@ pub enum ServerStatus {
     Error,
 }
 
+impl std::fmt::Display for ServerStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ServerStatus::Active => write!(f, "Active"),
+            ServerStatus::Inactive => write!(f, "Inactive"),
+            ServerStatus::Provisioning => write!(f, "Provisioning"),
+            ServerStatus::Error => write!(f, "Error"),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct ServerSpecs {
     pub cpu_cores: i32,

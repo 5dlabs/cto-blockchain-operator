@@ -13,18 +13,20 @@ spec:
     cpuLimit: "32"
     memoryLimit: "128Gi"
   heimdall:
-    image: "0xpolygon/heimdall-v2:v0.6.0"
+    image: "0xpolygon/heimdall-v2:0.6.0"
     seeds:
-      - "1500161dd491b67fb1ac81868952be49e2509c9f@52.78.36.216:26656"
-      - "dd4a3f1750af5765266eaa5b9c3bfd11048cd398@18.138.56.214:26656"
-      - "8ea4f592ad6cc38d7532aff418d1fb97052463af@34.240.245.39:26656"
-      - "e772e1fb8c3492a9570a377a5eafdb1dc53cd778@54.194.245.5:26656"
-    genesisUrl: "https://raw.githubusercontent.com/maticnetwork/heimdall-v2/main/genesis/mainnet/genesis.json"
+      - "a0ef6f328949adc077c59ab1f6b03711ae8d32d2@34.185.209.56:26656"
+      - "f1e632758dfaf616a833900c0b8845bb2547b7c2@34.185.162.14:26656"
+      - "e49bb5d9cb22943fb2b9f49a4c5d0f773917efaf@34.179.171.228:26656"
+      - "babb8151d6fae45fcbb9229bd9faba173f3feaf3@35.246.166.189:26656"
+    genesisUrl: "https://storage.googleapis.com/mainnet-heimdallv2-genesis/migrated_dump-genesis.json"
   bor:
-    image: "0xpolygon/bor:v2.6.3"
+    image: "0xpolygon/bor:2.6.3"
     bootnodes:
-      - "enode://b8f1cc9c5d4403703fbf377116469667d2b1823c0daf16b7250aa576bacf399e42c3930ccfcb02c5c23f7c7b825e20e6c0d68ddfd90e1a0e8e67508e65e97a502@13.212.254.46:30303"
-      - "enode://8729e0c825f3d9cad382555f3e46dcff21af323e89025a0e6312df541f4a9e73abfa562d64906f5e59c51fe6f0501b3e61b07979f96c8bf2cc9b90afff1e88e8f@18.143.153.21:30303"
+      - "enode://48e6326841ce106f6b4e229a1be7e98a1d12be57e328b08cb461f6744ae4e78f5ec2340996ce9b40928a1a90137aadea13e25ca34774b52a3600d13a52c5c7bb@34.185.209.56:30303"
+      - "enode://8ab6905fe76aa9001adb77135250e918db888cac216870c0e95cf26650d83d31d8c2c93d54c3333e0a2196517c41651d174b743ec3e11f44e595f62b77fec7ba@34.185.162.14:30303"
+      - "enode://02e0b33cf60fb1f88f853c7c04830156151f4acd1c36173cd3fe1f375801fb4f5be5b3a89c98527915d37ed217752933c3faf4c820df740c9dd681294caebcf6@34.179.171.228:30303"
+      - "enode://079c387b65b09674825462ea63c528ca996af7b03d19b1b2ab6557347434838067db6dd7ae5e0c2e08d5ba164117f3d7faffbf3e890cb91cffbdf45a433ddfce@35.246.166.189:30303"
     httpEnabled: false
     wsEnabled: false
     maxPeers: 100

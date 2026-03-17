@@ -30,3 +30,6 @@ pub mod ovh;
 pub use cherry::CherryProvider;
 pub use latitude::LatitudeProvider;
 pub use ovh::OvhProvider;
+
+// Re-export models types used by providers
+pub use crate::models::{Server, ServerSpec, ServerSpecs, ServerStatus};

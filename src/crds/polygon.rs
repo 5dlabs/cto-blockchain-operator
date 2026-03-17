@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 
 /// PolygonNodeSpec defines the desired state of a Polygon PoS node
 #[derive(CustomResource, Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 #[kube(
     group = "blockchain.5dlabs.io",
     version = "v1alpha1",
@@ -85,6 +86,7 @@ pub enum DeploymentTarget {
 
 /// Bare-metal server configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct BareMetalConfig {
     /// Provider name (e.g., "ovh", "cherry", "latitude")
     pub provider: String,
@@ -101,6 +103,7 @@ pub struct BareMetalConfig {
 
 /// Compute resource requirements
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct NodeResources {
     /// CPU request
     #[serde(default = "default_cpu_request")]
@@ -122,6 +125,7 @@ fn default_memory_request() -> String { "64Gi".to_string() }
 
 /// Heimdall v2 consensus layer configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct HeimdallConfig {
     /// Container image for Heimdall
     #[serde(default = "default_heimdall_image")]
@@ -168,7 +172,7 @@ impl Default for HeimdallConfig {
     }
 }
 
-fn default_heimdall_image() -> String { "0xpolygon/heimdall-v2:v0.6.0".to_string() }
+fn default_heimdall_image() -> String { "0xpolygon/heimdall-v2:0.6.0".to_string() }
 fn default_heimdall_p2p_port() -> i32 { 26656 }
 fn default_heimdall_rpc_port() -> i32 { 26657 }
 fn default_heimdall_rest_port() -> i32 { 1317 }
@@ -176,6 +180,7 @@ fn default_heimdall_metrics_port() -> i32 { 26660 }
 
 /// Bor execution layer configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct BorConfig {
     /// Container image for Bor
     #[serde(default = "default_bor_image")]
@@ -220,7 +225,7 @@ pub struct BorConfig {
     pub extra_args: Option<Vec<String>>,
 }
 
-fn default_bor_image() -> String { "0xpolygon/bor:v2.6.3".to_string() }
+fn default_bor_image() -> String { "0xpolygon/bor:2.6.3".to_string() }
 fn default_bor_p2p_port() -> i32 { 30303 }
 fn default_bor_http_port() -> i32 { 8545 }
 fn default_bor_ws_port() -> i32 { 8546 }
@@ -232,6 +237,7 @@ fn default_bor_max_peers() -> i32 { 50 }
 
 /// Erigon execution layer configuration (archive nodes)
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct ErigonConfig {
     /// Container image for Erigon
     #[serde(default = "default_erigon_image")]
@@ -268,6 +274,7 @@ fn default_erigon_prune_mode() -> String { "archive".to_string() }
 
 /// Storage configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct StorageConfig {
     /// Kubernetes StorageClass name
     #[serde(default = "default_storage_class")]
@@ -288,6 +295,7 @@ fn default_execution_storage_size() -> String { "8Ti".to_string() }
 
 /// PolygonNodeStatus defines the observed state of a PolygonNode
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct PolygonNodeStatus {
     /// Current phase of the node
     pub phase: Option<PolygonNodePhase>,

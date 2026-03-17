@@ -17,18 +17,10 @@ spec:
       containers:
       - name: cto-operator
         image: ghcr.io/5dlabs/cto-blockchain-operator:latest
-        imagePullPolicy: IfNotPresent
+        imagePullPolicy: Always
         env:
-        - name: CHERRY_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: cherry-credentials
-              key: api-key
-        - name: LATITUDE_API_KEY
-          valueFrom:
-            secretKeyRef:
-              name: latitude-credentials
-              key: api-key
+        - name: RUST_LOG
+          value: "info,cto_blockchain_operator=debug"
         ports:
         - containerPort: 8080
           name: metrics
@@ -39,9 +31,3 @@ spec:
           limits:
             cpu: 500m
             memory: 512Mi
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 8080
-          initialDelaySeconds: 30
-          periodSeconds: 10

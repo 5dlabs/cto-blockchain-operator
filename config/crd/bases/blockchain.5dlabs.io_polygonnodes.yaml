@@ -96,7 +96,7 @@ spec:
                   image:
                     description: Container image
                     type: string
-                    default: "0xpolygon/heimdall-v2:v0.6.0"
+                    default: "0xpolygon/heimdall-v2:0.6.0"
                   seeds:
                     description: P2P seed nodes
                     items:
@@ -133,7 +133,7 @@ spec:
                   image:
                     description: Container image
                     type: string
-                    default: "0xpolygon/bor:v2.6.3"
+                    default: "0xpolygon/bor:2.6.3"
                   bootnodes:
                     description: Bootnode ENR addresses
                     items:

@@ -18,12 +18,12 @@ fn make_full_node_spec() -> PolygonNodeSpec {
             memory_limit: Some("128Gi".to_string()),
         },
         heimdall: HeimdallConfig {
-            image: "0xpolygon/heimdall-v2:v0.6.0".to_string(),
+            image: "0xpolygon/heimdall-v2:0.6.0".to_string(),
             seeds: Some(vec!["seed1@1.2.3.4:26656".to_string()]),
             ..Default::default()
         },
         bor: Some(BorConfig {
-            image: "0xpolygon/bor:v2.6.3".to_string(),
+            image: "0xpolygon/bor:2.6.3".to_string(),
             bootnodes: Some(vec!["enode://abc@1.2.3.4:30303".to_string()]),
             p2p_port: 30303,
             http_port: 8545,
@@ -252,7 +252,7 @@ async fn test_sentry_node_config() {
         },
         heimdall: HeimdallConfig::default(),
         bor: Some(BorConfig {
-            image: "0xpolygon/bor:v2.6.3".to_string(),
+            image: "0xpolygon/bor:2.6.3".to_string(),
             bootnodes: None,
             p2p_port: 30303,
             http_port: 8545,

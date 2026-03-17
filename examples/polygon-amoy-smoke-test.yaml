@@ -1,0 +1,32 @@
+apiVersion: blockchain.5dlabs.io/v1alpha1
+kind: PolygonNode
+metadata:
+  name: amoy-smoke-test
+spec:
+  nodeType: full
+  network: amoy
+  deploymentTarget: incluster
+  heimdall:
+    image: "0xpolygon/heimdall-v2:0.6.0"
+    seeds:
+      - "4cd60c1d76e44b05f7dfd8bab3f447b119e87042@54.147.31.250:26656"
+      - "a829b0ac8ce37e9b13e8648a9a26f40e8b46b1c1@54.204.136.182:26656"
+  bor:
+    image: "0xpolygon/bor:2.6.3"
+    httpEnabled: true
+    httpApi: "eth,net,web3,txpool,bor"
+    maxPeers: 25
+    p2pPort: 30303
+    httpPort: 8545
+    wsPort: 8546
+    metricsPort: 9091
+  resources:
+    cpuRequest: "4"
+    memoryRequest: "16Gi"
+    cpuLimit: "8"
+    memoryLimit: "32Gi"
+  storage:
+    storageClass: "mayastor"
+    heimdallSize: "50Gi"
+    executionSize: "100Gi"
+  enableMetrics: true

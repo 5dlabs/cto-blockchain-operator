@@ -19,12 +19,12 @@ async fn test_polygon_full_node_crd() {
                 memory_limit: Some("128Gi".to_string()),
             },
             heimdall: HeimdallConfig {
-                image: "0xpolygon/heimdall-v2:v0.6.0".to_string(),
+                image: "0xpolygon/heimdall-v2:0.6.0".to_string(),
                 seeds: Some(vec!["seed1@1.2.3.4:26656".to_string()]),
                 ..Default::default()
             },
             bor: Some(BorConfig {
-                image: "0xpolygon/bor:v2.6.3".to_string(),
+                image: "0xpolygon/bor:2.6.3".to_string(),
                 bootnodes: Some(vec!["enode://abc@1.2.3.4:30303".to_string()]),
                 p2p_port: 30303,
                 http_port: 8545,
@@ -116,7 +116,7 @@ async fn test_polygon_sentry_node_crd() {
             },
             heimdall: HeimdallConfig::default(),
             bor: Some(BorConfig {
-                image: "0xpolygon/bor:v2.6.3".to_string(),
+                image: "0xpolygon/bor:2.6.3".to_string(),
                 bootnodes: None,
                 p2p_port: 30303,
                 http_port: 8545,
@@ -148,7 +148,7 @@ async fn test_polygon_sentry_node_crd() {
 #[tokio::test]
 async fn test_polygon_defaults() {
     let heimdall = HeimdallConfig::default();
-    assert_eq!(heimdall.image, "0xpolygon/heimdall-v2:v0.6.0");
+    assert_eq!(heimdall.image, "0xpolygon/heimdall-v2:0.6.0");
     assert_eq!(heimdall.p2p_port, 26656);
     assert_eq!(heimdall.rpc_port, 26657);
     assert_eq!(heimdall.rest_port, 1317);
@@ -170,7 +170,7 @@ async fn test_polygon_serialization_roundtrip() {
         },
         heimdall: HeimdallConfig::default(),
         bor: Some(BorConfig {
-            image: "0xpolygon/bor:v2.6.3".to_string(),
+            image: "0xpolygon/bor:2.6.3".to_string(),
             bootnodes: None,
             p2p_port: 30303,
             http_port: 8545,
@@ -236,7 +236,7 @@ async fn test_polygon_bare_metal_config() {
             },
             heimdall: HeimdallConfig::default(),
             bor: Some(BorConfig {
-                image: "0xpolygon/bor:v2.6.3".to_string(),
+                image: "0xpolygon/bor:2.6.3".to_string(),
                 bootnodes: None,
                 p2p_port: 30303,
                 http_port: 8545,

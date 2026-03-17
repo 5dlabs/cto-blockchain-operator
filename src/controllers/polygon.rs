@@ -373,17 +373,18 @@ datadir = "/var/lib/bor/data"
             }
         }
 
-        // Volume claim templates
+        // Volume claim templates (auto-sized from network/nodeType if not specified)
+        let storage = spec.effective_storage();
         let heimdall_pvc = serde_json::from_value(serde_json::json!({
             "metadata": {
                 "name": "heimdall-data"
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
-                "storageClassName": spec.storage.storage_class,
+                "storageClassName": storage.storage_class.as_deref().unwrap(),
                 "resources": {
                     "requests": {
-                        "storage": spec.storage.heimdall_size
+                        "storage": storage.heimdall_size.as_deref().unwrap()
                     }
                 }
             }
@@ -395,10 +396,10 @@ datadir = "/var/lib/bor/data"
             },
             "spec": {
                 "accessModes": ["ReadWriteOnce"],
-                "storageClassName": spec.storage.storage_class,
+                "storageClassName": storage.storage_class.as_deref().unwrap(),
                 "resources": {
                     "requests": {
-                        "storage": spec.storage.execution_size
+                        "storage": storage.execution_size.as_deref().unwrap()
                     }
                 }
             }
@@ -418,14 +419,20 @@ datadir = "/var/lib/bor/data"
             });
         }
 
+        // Resource requirements (auto-sized from network/nodeType if not specified)
+        let resources = spec.effective_resources();
+        let cpu_req = resources.cpu_request.as_deref().unwrap();
+        let mem_req = resources.memory_request.as_deref().unwrap();
+        let cpu_lim = resources.cpu_limit.as_deref().unwrap_or(cpu_req);
+        let mem_lim = resources.memory_limit.as_deref().unwrap_or(mem_req);
         let resource_requirements = serde_json::from_value(serde_json::json!({
             "requests": {
-                "cpu": spec.resources.cpu_request,
-                "memory": spec.resources.memory_request
+                "cpu": cpu_req,
+                "memory": mem_req
             },
             "limits": {
-                "cpu": spec.resources.cpu_limit.as_deref().unwrap_or(&spec.resources.cpu_request),
-                "memory": spec.resources.memory_limit.as_deref().unwrap_or(&spec.resources.memory_request)
+                "cpu": cpu_lim,
+                "memory": mem_lim
             }
         }))?;
 

@@ -16,17 +16,8 @@ spec:
     httpEnabled: true
     httpApi: "eth,net,web3,txpool,bor"
     maxPeers: 25
-    p2pPort: 30303
-    httpPort: 8545
-    wsPort: 8546
-    metricsPort: 9091
-  resources:
-    cpuRequest: "4"
-    memoryRequest: "16Gi"
-    cpuLimit: "8"
-    memoryLimit: "32Gi"
+  # resources omitted — auto-sized to Amoy/Full defaults (4 CPU, 16Gi RAM)
+  # storage: only override storageClass, sizes auto-sized (50Gi heimdall, 500Gi execution)
   storage:
     storageClass: "mayastor"
-    heimdallSize: "50Gi"
-    executionSize: "100Gi"
   enableMetrics: true

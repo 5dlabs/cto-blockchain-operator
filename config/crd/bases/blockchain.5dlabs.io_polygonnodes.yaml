@@ -73,21 +73,19 @@ spec:
                 - provider
                 type: object
               resources:
-                description: Compute resources
+                description: Compute resources (auto-sized from network/nodeType if omitted)
                 properties:
                   cpuRequest:
                     description: CPU request
                     type: string
-                    default: "16"
                   memoryRequest:
                     description: Memory request
                     type: string
-                    default: "64Gi"
                   cpuLimit:
-                    description: CPU limit (optional)
+                    description: CPU limit
                     type: string
                   memoryLimit:
-                    description: Memory limit (optional)
+                    description: Memory limit
                     type: string
                 type: object
               heimdall:
@@ -210,28 +208,22 @@ spec:
                     type: array
                 type: object
               storage:
-                description: Storage configuration
+                description: Storage configuration (auto-sized from network/nodeType if omitted)
                 properties:
                   storageClass:
                     description: Kubernetes StorageClass name
                     type: string
-                    default: "csi-cinder-high-speed"
                   heimdallSize:
                     description: Heimdall data volume size
                     type: string
-                    default: "1Ti"
                   executionSize:
                     description: Execution layer data volume size
                     type: string
-                    default: "8Ti"
                 type: object
               enableMetrics:
                 description: Enable Prometheus metrics endpoints
                 type: boolean
                 default: true
-            required:
-            - resources
-            - storage
             type: object
           status:
             description: PolygonNodeStatus defines the observed state of PolygonNode

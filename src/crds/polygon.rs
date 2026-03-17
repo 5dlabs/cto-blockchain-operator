@@ -33,8 +33,8 @@ pub struct PolygonNodeSpec {
     /// Bare-metal configuration (required when deployment_target is BareMetal)
     pub bare_metal: Option<BareMetalConfig>,
 
-    /// Compute resources
-    pub resources: NodeResources,
+    /// Compute resources (auto-sized from network/nodeType if omitted)
+    pub resources: Option<NodeResources>,
 
     /// Heimdall consensus layer configuration
     #[serde(default)]
@@ -46,8 +46,8 @@ pub struct PolygonNodeSpec {
     /// Erigon execution layer configuration (for Archive nodes)
     pub erigon: Option<ErigonConfig>,
 
-    /// Storage configuration
-    pub storage: StorageConfig,
+    /// Storage configuration (auto-sized from network/nodeType if omitted)
+    pub storage: Option<StorageConfig>,
 
     /// Enable Prometheus metrics endpoints
     #[serde(default = "default_enable_metrics")]
@@ -106,22 +106,17 @@ pub struct BareMetalConfig {
 #[serde(rename_all = "camelCase")]
 pub struct NodeResources {
     /// CPU request
-    #[serde(default = "default_cpu_request")]
-    pub cpu_request: String,
+    pub cpu_request: Option<String>,
 
     /// Memory request
-    #[serde(default = "default_memory_request")]
-    pub memory_request: String,
+    pub memory_request: Option<String>,
 
-    /// CPU limit (optional)
+    /// CPU limit
     pub cpu_limit: Option<String>,
 
-    /// Memory limit (optional)
+    /// Memory limit
     pub memory_limit: Option<String>,
 }
-
-fn default_cpu_request() -> String { "16".to_string() }
-fn default_memory_request() -> String { "64Gi".to_string() }
 
 /// Heimdall v2 consensus layer configuration
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, PartialEq)]
@@ -277,21 +272,113 @@ fn default_erigon_prune_mode() -> String { "archive".to_string() }
 #[serde(rename_all = "camelCase")]
 pub struct StorageConfig {
     /// Kubernetes StorageClass name
-    #[serde(default = "default_storage_class")]
-    pub storage_class: String,
+    pub storage_class: Option<String>,
 
     /// Heimdall data volume size
-    #[serde(default = "default_heimdall_storage_size")]
-    pub heimdall_size: String,
+    pub heimdall_size: Option<String>,
 
     /// Execution layer data volume size (Bor or Erigon)
-    #[serde(default = "default_execution_storage_size")]
-    pub execution_size: String,
+    pub execution_size: Option<String>,
 }
 
-fn default_storage_class() -> String { "csi-cinder-high-speed".to_string() }
-fn default_heimdall_storage_size() -> String { "1Ti".to_string() }
-fn default_execution_storage_size() -> String { "8Ti".to_string() }
+/// Recommended sizing for a given (network, node_type) combination
+pub struct RecommendedSizing {
+    pub heimdall_size: &'static str,
+    pub execution_size: &'static str,
+    pub storage_class: &'static str,
+    pub cpu_request: &'static str,
+    pub memory_request: &'static str,
+    pub cpu_limit: &'static str,
+    pub memory_limit: &'static str,
+}
+
+impl RecommendedSizing {
+    pub fn for_network_and_type(network: &PolygonNetwork, node_type: &PolygonNodeType) -> Self {
+        match (network, node_type) {
+            (PolygonNetwork::Mainnet, PolygonNodeType::Full | PolygonNodeType::Sentry) => Self {
+                heimdall_size: "1Ti",
+                execution_size: "8Ti",
+                storage_class: "csi-cinder-high-speed",
+                cpu_request: "16",
+                memory_request: "64Gi",
+                cpu_limit: "32",
+                memory_limit: "128Gi",
+            },
+            (PolygonNetwork::Mainnet, PolygonNodeType::Archive) => Self {
+                heimdall_size: "1Ti",
+                execution_size: "16Ti",
+                storage_class: "csi-cinder-high-speed",
+                cpu_request: "16",
+                memory_request: "128Gi",
+                cpu_limit: "32",
+                memory_limit: "128Gi",
+            },
+            (PolygonNetwork::Amoy, PolygonNodeType::Full | PolygonNodeType::Sentry) => Self {
+                heimdall_size: "50Gi",
+                execution_size: "500Gi",
+                storage_class: "csi-cinder-high-speed",
+                cpu_request: "4",
+                memory_request: "16Gi",
+                cpu_limit: "8",
+                memory_limit: "32Gi",
+            },
+            (PolygonNetwork::Amoy, PolygonNodeType::Archive) => Self {
+                heimdall_size: "50Gi",
+                execution_size: "1Ti",
+                storage_class: "csi-cinder-high-speed",
+                cpu_request: "4",
+                memory_request: "32Gi",
+                cpu_limit: "8",
+                memory_limit: "32Gi",
+            },
+        }
+    }
+}
+
+impl PolygonNodeSpec {
+    /// Returns effective StorageConfig, merging user overrides with recommended defaults.
+    pub fn effective_storage(&self) -> StorageConfig {
+        let defaults = RecommendedSizing::for_network_and_type(&self.network, &self.node_type);
+        match &self.storage {
+            Some(user) => StorageConfig {
+                storage_class: Some(user.storage_class.clone()
+                    .unwrap_or_else(|| defaults.storage_class.to_string())),
+                heimdall_size: Some(user.heimdall_size.clone()
+                    .unwrap_or_else(|| defaults.heimdall_size.to_string())),
+                execution_size: Some(user.execution_size.clone()
+                    .unwrap_or_else(|| defaults.execution_size.to_string())),
+            },
+            None => StorageConfig {
+                storage_class: Some(defaults.storage_class.to_string()),
+                heimdall_size: Some(defaults.heimdall_size.to_string()),
+                execution_size: Some(defaults.execution_size.to_string()),
+            },
+        }
+    }
+
+    /// Returns effective NodeResources, merging user overrides with recommended defaults.
+    pub fn effective_resources(&self) -> NodeResources {
+        let defaults = RecommendedSizing::for_network_and_type(&self.network, &self.node_type);
+        match &self.resources {
+            Some(user) => NodeResources {
+                cpu_request: Some(user.cpu_request.clone()
+                    .unwrap_or_else(|| defaults.cpu_request.to_string())),
+                memory_request: Some(user.memory_request.clone()
+                    .unwrap_or_else(|| defaults.memory_request.to_string())),
+                cpu_limit: Some(user.cpu_limit.clone()
+                    .unwrap_or_else(|| defaults.cpu_limit.to_string())),
+                memory_limit: Some(user.memory_limit.clone()
+                    .unwrap_or_else(|| defaults.memory_limit.to_string())),
+            },
+            None => NodeResources {
+                cpu_request: Some(defaults.cpu_request.to_string()),
+                memory_request: Some(defaults.memory_request.to_string()),
+                cpu_limit: Some(defaults.cpu_limit.to_string()),
+                memory_limit: Some(defaults.memory_limit.to_string()),
+            },
+        }
+    }
+}
 
 /// PolygonNodeStatus defines the observed state of a PolygonNode
 #[derive(Serialize, Deserialize, Clone, Debug, JsonSchema, Default, PartialEq)]

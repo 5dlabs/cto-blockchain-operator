@@ -11,12 +11,12 @@ fn make_full_node_spec() -> PolygonNodeSpec {
         network: PolygonNetwork::Mainnet,
         deployment_target: DeploymentTarget::InCluster,
         bare_metal: None,
-        resources: NodeResources {
-            cpu_request: "16".to_string(),
-            memory_request: "64Gi".to_string(),
+        resources: Some(NodeResources {
+            cpu_request: Some("16".to_string()),
+            memory_request: Some("64Gi".to_string()),
             cpu_limit: Some("32".to_string()),
             memory_limit: Some("128Gi".to_string()),
-        },
+        }),
         heimdall: HeimdallConfig {
             image: "0xpolygon/heimdall-v2:0.6.0".to_string(),
             seeds: Some(vec!["seed1@1.2.3.4:26656".to_string()]),
@@ -36,11 +36,11 @@ fn make_full_node_spec() -> PolygonNodeSpec {
             extra_args: None,
         }),
         erigon: None,
-        storage: StorageConfig {
-            storage_class: "csi-cinder-high-speed".to_string(),
-            heimdall_size: "1Ti".to_string(),
-            execution_size: "8Ti".to_string(),
-        },
+        storage: Some(StorageConfig {
+            storage_class: Some("csi-cinder-high-speed".to_string()),
+            heimdall_size: Some("1Ti".to_string()),
+            execution_size: Some("8Ti".to_string()),
+        }),
         enable_metrics: true,
     }
 }
@@ -51,12 +51,12 @@ fn make_archive_node_spec() -> PolygonNodeSpec {
         network: PolygonNetwork::Mainnet,
         deployment_target: DeploymentTarget::InCluster,
         bare_metal: None,
-        resources: NodeResources {
-            cpu_request: "16".to_string(),
-            memory_request: "128Gi".to_string(),
+        resources: Some(NodeResources {
+            cpu_request: Some("16".to_string()),
+            memory_request: Some("128Gi".to_string()),
             cpu_limit: Some("32".to_string()),
             memory_limit: Some("128Gi".to_string()),
-        },
+        }),
         heimdall: HeimdallConfig::default(),
         bor: None,
         erigon: Some(ErigonConfig {
@@ -68,11 +68,11 @@ fn make_archive_node_spec() -> PolygonNodeSpec {
             chain: Some("bor-mainnet".to_string()),
             extra_args: None,
         }),
-        storage: StorageConfig {
-            storage_class: "csi-cinder-high-speed".to_string(),
-            heimdall_size: "1Ti".to_string(),
-            execution_size: "16Ti".to_string(),
-        },
+        storage: Some(StorageConfig {
+            storage_class: Some("csi-cinder-high-speed".to_string()),
+            heimdall_size: Some("1Ti".to_string()),
+            execution_size: Some("16Ti".to_string()),
+        }),
         enable_metrics: true,
     }
 }
@@ -119,20 +119,11 @@ async fn test_invalid_full_node_missing_bor() {
         network: PolygonNetwork::Mainnet,
         deployment_target: DeploymentTarget::InCluster,
         bare_metal: None,
-        resources: NodeResources {
-            cpu_request: "16".to_string(),
-            memory_request: "64Gi".to_string(),
-            cpu_limit: None,
-            memory_limit: None,
-        },
+        resources: None,
         heimdall: HeimdallConfig::default(),
         bor: None, // Missing!
         erigon: None,
-        storage: StorageConfig {
-            storage_class: "standard".to_string(),
-            heimdall_size: "100Gi".to_string(),
-            execution_size: "500Gi".to_string(),
-        },
+        storage: None,
         enable_metrics: true,
     };
 
@@ -148,20 +139,11 @@ async fn test_invalid_archive_node_missing_erigon() {
         network: PolygonNetwork::Mainnet,
         deployment_target: DeploymentTarget::InCluster,
         bare_metal: None,
-        resources: NodeResources {
-            cpu_request: "16".to_string(),
-            memory_request: "128Gi".to_string(),
-            cpu_limit: None,
-            memory_limit: None,
-        },
+        resources: None,
         heimdall: HeimdallConfig::default(),
         bor: None,
         erigon: None, // Missing!
-        storage: StorageConfig {
-            storage_class: "standard".to_string(),
-            heimdall_size: "100Gi".to_string(),
-            execution_size: "500Gi".to_string(),
-        },
+        storage: None,
         enable_metrics: true,
     };
 
@@ -219,9 +201,10 @@ async fn test_statefulset_structure_full_node() {
     assert!(spec.bor.is_some());
     assert!(spec.erigon.is_none());
 
-    // Storage should be 8Ti for execution
-    assert_eq!(spec.storage.execution_size, "8Ti");
-    assert_eq!(spec.storage.heimdall_size, "1Ti");
+    // Storage should be 8Ti for execution (via effective_storage)
+    let storage = spec.effective_storage();
+    assert_eq!(storage.execution_size.as_deref().unwrap(), "8Ti");
+    assert_eq!(storage.heimdall_size.as_deref().unwrap(), "1Ti");
 }
 
 #[tokio::test]
@@ -232,9 +215,10 @@ async fn test_statefulset_structure_archive_node() {
     assert!(spec.bor.is_none());
     assert!(spec.erigon.is_some());
 
-    // Storage should be 16Ti for execution
-    assert_eq!(spec.storage.execution_size, "16Ti");
-    assert_eq!(spec.storage.heimdall_size, "1Ti");
+    // Storage should be 16Ti for execution (via effective_storage)
+    let storage = spec.effective_storage();
+    assert_eq!(storage.execution_size.as_deref().unwrap(), "16Ti");
+    assert_eq!(storage.heimdall_size.as_deref().unwrap(), "1Ti");
 }
 
 #[tokio::test]
@@ -244,12 +228,7 @@ async fn test_sentry_node_config() {
         network: PolygonNetwork::Mainnet,
         deployment_target: DeploymentTarget::InCluster,
         bare_metal: None,
-        resources: NodeResources {
-            cpu_request: "16".to_string(),
-            memory_request: "64Gi".to_string(),
-            cpu_limit: None,
-            memory_limit: None,
-        },
+        resources: None,
         heimdall: HeimdallConfig::default(),
         bor: Some(BorConfig {
             image: "0xpolygon/bor:2.6.3".to_string(),
@@ -265,15 +244,17 @@ async fn test_sentry_node_config() {
             extra_args: None,
         }),
         erigon: None,
-        storage: StorageConfig {
-            storage_class: "csi-cinder-high-speed".to_string(),
-            heimdall_size: "1Ti".to_string(),
-            execution_size: "8Ti".to_string(),
-        },
+        storage: None,
         enable_metrics: true,
     };
 
     // Sentry: no HTTP, high peer count
     assert!(!spec.bor.as_ref().unwrap().http_enabled);
     assert_eq!(spec.bor.as_ref().unwrap().max_peers, 100);
+
+    // Auto-sized for mainnet sentry
+    let storage = spec.effective_storage();
+    assert_eq!(storage.execution_size.as_deref().unwrap(), "8Ti");
+    let resources = spec.effective_resources();
+    assert_eq!(resources.cpu_request.as_deref().unwrap(), "16");
 }

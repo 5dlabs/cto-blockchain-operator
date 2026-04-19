@@ -1,0 +1,6 @@
+# Stub pipeline — GitLab mirror is active; runner will smoke-test the project.
+# Replace with real CI as needed.
+include:
+  - project: "5dlabs/cto"
+    ref: main
+    file: ".gitlab/ci/templates/smoke.yml"
